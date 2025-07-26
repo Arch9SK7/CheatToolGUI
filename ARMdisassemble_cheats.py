@@ -253,7 +253,8 @@ def decode_next_opcode(opcodes, index):
         
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
         
-        out.str = f"[{mem_type_str(mem_type)}+R{offset_register}+0x{rel_address:010X}] = 0x{value.value:X}"
+        # Modified line for desired output
+        out.str = f"[{mem_type_str(mem_type)}+R{offset_register}+0x{rel_address:010X}]= "
         
         if CAPSTONE_AVAILABLE:
             if bit_width == 8:
@@ -264,39 +265,36 @@ def decode_next_opcode(opcodes, index):
                 if TARGET_ARCH == "ARM64":
                     asm_low = arm64_disassemble(low_32_bits, rel_address)
                     asm_high = arm64_disassemble(high_32_bits, rel_address + 4)
-                    arch_label = "ARM64"
                 elif TARGET_ARCH == "ARM32":
                     asm_low = arm32_disassemble(low_32_bits, rel_address)
                     asm_high = arm32_disassemble(high_32_bits, rel_address + 4)
-                    arch_label = "ARM32"
                 else:
                     asm_low = ""
                     asm_high = ""
-                    arch_label = "UNKNOWN ARCH"
 
                 if asm_low:
-                    combined_asm.append(f"[{rel_address:X}] {asm_low}")
+                    combined_asm.append(f"{asm_low}")
                 if asm_high:
-                    combined_asm.append(f"[{rel_address + 4:X}] {asm_high}")
+                    combined_asm.append(f"{asm_high}")
                 
                 if combined_asm:
-                    out.str += f"  ({arch_label}: {'; '.join(combined_asm)})"
+                    out.str += f"{'; '.join(combined_asm)}"
                 else:
-                    out.str += f"  ({arch_label}: No disassembly)"
+                    out.str += "No disassembly"
 
             elif bit_width == 4:
                 if TARGET_ARCH == "ARM64":
                     asm = arm64_disassemble(value.value, rel_address)
                     if asm:
-                        out.str += f"  (ARM64: {asm})"
+                        out.str += f"{asm}"
                 elif TARGET_ARCH == "ARM32":
                     asm = arm32_disassemble(value.value, rel_address)
                     if asm:
-                        out.str += f"  (ARM32: {asm})"
+                        out.str += f"{asm}"
                 else:
-                    out.str += " (Disassembly type not determined)"
+                    out.str += "Disassembly type not determined"
         else:
-            out.str += " (Disassembly skipped - Capstone not available)"
+            out.str += "Disassembly skipped - Capstone not available"
     
     elif out.opcode == CheatVmOpcodeType.BeginConditionalBlock:
         bit_width = (first_dword >> 24) & 0xF
