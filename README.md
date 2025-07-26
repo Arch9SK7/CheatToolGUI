@@ -106,8 +106,9 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 -   **Capstone Engine:** Used for disassembly. ([Website](https://www.capstone-engine.org/))
 -   UI Program Developed by [Arch9SK7]
 -   Python scripts by [Tomvita]
-<img width="1473" height="920" alt="Example2" src="https://github.com/user-attachments/assets/59cb1a73-7246-4047-a121-b9c7c070caab" />
-<img width="1474" height="919" alt="Example1" src="https://github.com/user-attachments/assets/8e54bc5e-b2dd-46c7-bba0-a91d89ce5218" />
+<img width="1475" height="743" alt="Screenshot 2025-07-26 143316" src="https://github.com/user-attachments/assets/f7baed7a-ee2b-41e1-8d41-acceb038cdb0" />
+<img width="1472" height="740" alt="Screenshot 2025-07-26 143125" src="https://github.com/user-attachments/assets/0487c97f-def3-4c57-87f5-8c2fb15c0edd" />
+
 
 ---
 
