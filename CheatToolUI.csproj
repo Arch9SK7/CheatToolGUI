@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>CheatToolUI</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>output.ico</ApplicationIcon>
+    <BuildCounter>0</BuildCounter>
+    <Revision>*</Revision>
+    <MajorMinorVersion>1.0</MajorMinorVersion>
+    <Version>$(MajorMinorVersion).$(BuildCounter)</Version>
+    <FileVersion>$(MajorMinorVersion).$(BuildCounter)</FileVersion>
+    <Product>CheatTool By Arch9SK7</Product>
+    <Company>THQN</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="output.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ARMdisassemble_cheats.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="assemble_cheats.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
