@@ -1,2 +1,113 @@
 # CheatToolGUI
-a user-friendly Windows Desktop application
+# Cheat Tool - ARM Assembly/Disassembly Utility
+
+## Table of Contents
+- [About](#about)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [How to Use](#how-to-use)
+- [Settings](#settings)
+- [File Operations](#file-operations)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Credits](#credits)
+
+## About
+The **Cheat Tool** is a user-friendly Windows Desktop application designed to simplify ARM (ARM64 & ARM32) assembly and disassembly operations. Built with C# for the graphical user interface and powered by Python scripting utilizing the powerful `keystone-engine` and `capstone` libraries, this tool provides a straightforward way to convert assembly instructions to Atmosphere codes and vice-versa, making it ideal for reverse engineering, cheat code creation, or binary analysis.
+
+## Features
+-   **ARM64 Assembly:** Convert ARM64 assembly instructions (e.g., `MOV X0, #0x1`) into their corresponding hexadecimal opcodes.
+-   **ARM64 & ARM32 Disassembly:** Convert raw hexadecimal opcodes into readable ARM64 or ARM32 assembly instructions.
+-   **Integrated Python Library Management:** Easily install or update necessary Python libraries (`keystone-engine` and `capstone`) directly from within the application with a single click. Includes automatic `pip` installation/upgrade.
+-   **User Settings:** Configure the Python executable path (useful if Python isn't in your system's PATH) and set a default architecture (ARM64/ARM32) for new sessions.
+-   **File Operations:** Load assembly code or opcodes from text files and save assembled/disassembled output or your current input to files for later use.
+-   **Clipboard Integration:** Dedicated "Copy Input" and "Copy Output" buttons for quickly copying content to your clipboard.
+-   **Intuitive GUI:** A clean and easy-to-navigate interface.
+-   **Version Numbering:** The application's version is displayed in the window title for easy reference.
+
+## Prerequisites
+Before running the application, ensure you have the following installed on your system:
+
+1.  **Windows Operating System:** This application is designed for Windows.
+2.  **Python 3.x:** A Python 3 installation is required. The tool will attempt to auto-detect Python in your system's PATH. If it fails, you can manually specify the Python executable path in the application's settings.
+3.  **.NET Desktop Runtime:** The specific version depends on how the application's executable is built. If you download the "self-contained" release, you might not need to install this separately (It is built with 9 inside). Otherwise, ensure you have a recent .NET Desktop Runtime (e.g., .NET Framework 4.7.2+ or .NET 6/7/8 Desktop Runtime).
+
+## Installation
+
+1.  **Download the Release:**
+    * Download the latest release package (`.zip` file) from the [GitHub Releases page](https://github.com/Arch9SK7/CheatToolGUI/releases).
+2.  **Extract Files:**
+    * Unzip the downloaded package to a directory of your choice (e.g., `C:\CheatTool`).
+    * You should find `CheatToolUI.exe` and two Python script files: `assemble_cheats.py` and `ARMdisassemble_cheats.py`.
+3.  **Place Files:**
+    * **Ensure `CheatToolUI.exe`, `assemble_cheats.py`, and `ARMdisassemble_cheats.py` are all located in the *same directory*.** The C# application relies on these Python scripts being present alongside it.
+4.  **Install Python Libraries:**
+    * Run `CheatToolUI.exe`.
+    * Click the **"Install/Update Python Libs"** button.
+    * This will automatically install or upgrade `pip` (if needed), followed by `keystone-engine` and `capstone`. You'll see the progress and results in the output text box. An active internet connection is required for this step.
+
+## How to Use
+
+1.  **Input Text Box:**
+    * For **Assembly:** Enter your ARM64 assembly instructions, one instruction per line (e.g., `MOV X0, #0x1`).
+    * For **Disassembly:** Enter your hexadecimal opcodes, one opcode (or a sequence of opcodes) per line (e.g., `E0030091`) There will be better examples in photos.
+2.  **Architecture Selection:**
+    * Use the **ARM64** or **ARM32** buttons to select the target architecture for **disassembly**.
+    * *Note: Assembly currently processes ARM64 instructions only.*
+3.  **Assemble Button:** Click to convert your ARM64 assembly input into hexadecimal opcodes. The results will appear in the output text box.
+4.  **Disassemble Button:** Click to convert your hexadecimal opcode input into assembly instructions (ARM64 or ARM32, based on your selection).
+5.  **Clear All Button:** Clears both the input and output text boxes.
+6.  **Copy Buttons:**
+    * **Copy Input:** Copies the entire content of the input text box to your clipboard.
+    * **Copy Output:** Copies the entire content of the output text box to your clipboard.
+
+## Settings
+
+Click the **"Settings"** button to open the application's configuration dialog:
+
+-   **Python Executable Path:**
+    * By default, the tool tries to find `python.exe` or `py.exe` in your system's PATH.
+    * If Python is not detected, or you wish to use a specific Python installation, you can click "Browse..." and manually select the full path to your desired `python.exe` or `py.exe` file.
+-   **Default Architecture:**
+    * Choose whether **ARM64** or **ARM32** should be pre-selected in the main window's architecture radio buttons when the application starts.
+
+Your settings will be automatically saved to a `settings.json` file in the application's directory and loaded each time you open the tool.
+
+## File Operations
+
+The tool provides convenient buttons for managing your input and output as files:
+
+-   **Load Input:** Opens a file dialog, allowing you to select a `.txt` or `.cheat` file. Its content will be loaded directly into the input text box.
+-   **Save Output:** Opens a file dialog to save the content of the output text box to a `.txt` or `.cheat` file of your choice.
+-   **Save Input:** Opens a file dialog to save the current content of the input text box to a `.txt` or `.cheat` file.
+
+## Troubleshooting
+
+-   **"Python executable not found"**:
+    1.  Ensure Python 3.x is correctly installed on your system.
+    2.  During Python installation, make sure you check the option to "Add Python to PATH".
+    3.  Alternatively, use the **Settings** button in the application to manually specify the full path to your `python.exe` or `py.exe`.
+-   **"Failed to install/upgrade pip"** or **"Library installation/update finished with errors"**:
+    1.  Verify you have an active internet connection.
+    2.  Check the output text box for specific error messages provided by `pip`. These often give clues about what went wrong.
+    3.  In rare cases, if `pip` encounters permission issues, you might need to run the `CheatToolUI.exe` as an administrator (right-click -> "Run as administrator"), though `pip` generally tries to install packages to user-specific directories without elevated privileges.
+-   **"Python script not found"**:
+    * This means the application cannot find `assemble_cheats.py` or `ARMdisassemble_cheats.py`. Ensure these Python script files are located in the *same directory* as your `CheatToolUI.exe`.
+-   **Incorrect Assembly/Disassembly Output**:
+    * Carefully double-check your input syntax. ARM assembly can be particular. Refer to the documentation for [Keystone Engine](https://www.keystone-engine.org/docs/) (for assembly) and [Capstone Engine](https://www.capstone-engine.org/documentation.html) (for disassembly) for supported syntax.
+    * For disassembly, ensure you have selected the correct architecture (ARM64 or ARM32) using the given buttons.
+
+## License
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT) - see the [LICENSE](LICENSE) file for details.
+
+## Credits
+-   **Keystone Engine:** Used for assembly. ([Website](https://www.keystone-engine.org/))
+-   **Capstone Engine:** Used for disassembly. ([Website](https://www.capstone-engine.org/))
+-   UI Program Developed by [Arch9SK7]
+-   Python scripts by [Tomvita]
+<img width="1473" height="920" alt="Example2" src="https://github.com/user-attachments/assets/59cb1a73-7246-4047-a121-b9c7c070caab" />
+<img width="1474" height="919" alt="Example1" src="https://github.com/user-attachments/assets/8e54bc5e-b2dd-46c7-bba0-a91d89ce5218" />
+
+---
+
