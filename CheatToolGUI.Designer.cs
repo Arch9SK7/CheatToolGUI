@@ -29,100 +29,41 @@
         /// </summary>
         private void InitializeComponent()
         {
-            textBoxInput = new RichTextBox();
-            textBoxOutput = new RichTextBox();
-            btnDisassemble = new Button();
-            btnAssemble = new Button();
-            btnClearAll = new Button();
-            radioButtonArm32 = new RadioButton();
-            radioButtonArm64 = new RadioButton();
             statusStrip = new StatusStrip();
             statusLabel = new ToolStripStatusLabel();
-            btnInstallPythonLibs = new Button();
-            btnLoadInput = new Button();
-            btnSaveInput = new Button();
-            btnSaveOutput = new Button();
-            btnSettings = new Button();
-            btnCopyInput = new Button();
-            btnCopyOutput = new Button();
-            checkBoxShowRawOpcodes = new CheckBox();
-            textBoxCaveBaseAddress = new TextBox();
-            numericUpDownCaveLines = new NumericUpDown();
+            tabControlMain = new TabControl();
+            tabPageMain = new TabPage();
+            checkBoxAdvancedCaveMode = new CheckBox();
             btnGenerateCodeCave = new Button();
+            numericUpDownCaveLines = new NumericUpDown();
+            textBoxCaveBaseAddress = new TextBox();
+            checkBoxShowRawOpcodes = new CheckBox();
+            btnCopyOutput = new Button();
+            btnCopyInput = new Button();
+            btnSettings = new Button();
+            btnSaveOutput = new Button();
+            btnSaveInput = new Button();
+            btnLoadInput = new Button();
+            btnInstallPythonLibs = new Button();
+            radioButtonArm64 = new RadioButton();
+            radioButtonArm32 = new RadioButton();
+            btnClearAll = new Button();
+            btnAssemble = new Button();
+            btnDisassemble = new Button();
+            textBoxOutput = new RichTextBox();
+            textBoxInput = new RichTextBox();
+            tabPageInstructionRef = new TabPage();
+            richTextBoxInstructionDetails = new RichTextBox();
+            lblInstructionDetails = new Label();
+            listBoxInstructions = new ListBox();
+            textBoxSearchInstruction = new TextBox();
+            lblSearchInstruction = new Label();
             statusStrip.SuspendLayout();
+            tabControlMain.SuspendLayout();
+            tabPageMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numericUpDownCaveLines).BeginInit();
+            tabPageInstructionRef.SuspendLayout();
             SuspendLayout();
-            // 
-            // textBoxInput
-            // 
-            textBoxInput.Location = new Point(16, 99);
-            textBoxInput.Name = "textBoxInput";
-            textBoxInput.ScrollBars = RichTextBoxScrollBars.Vertical;
-            textBoxInput.Size = new Size(608, 587);
-            textBoxInput.TabIndex = 0;
-            textBoxInput.Text = "";
-            // 
-            // textBoxOutput
-            // 
-            textBoxOutput.Location = new Point(630, 99);
-            textBoxOutput.Name = "textBoxOutput";
-            textBoxOutput.ReadOnly = true;
-            textBoxOutput.Size = new Size(834, 587);
-            textBoxOutput.TabIndex = 1;
-            textBoxOutput.Text = "";
-            textBoxOutput.WordWrap = false;
-            // 
-            // btnDisassemble
-            // 
-            btnDisassemble.Location = new Point(311, 53);
-            btnDisassemble.Name = "btnDisassemble";
-            btnDisassemble.Size = new Size(160, 40);
-            btnDisassemble.TabIndex = 2;
-            btnDisassemble.Text = "Disassemble";
-            btnDisassemble.UseVisualStyleBackColor = true;
-            btnDisassemble.Click += btnDisassemble_Click;
-            // 
-            // btnAssemble
-            // 
-            btnAssemble.Location = new Point(1087, 53);
-            btnAssemble.Name = "btnAssemble";
-            btnAssemble.Size = new Size(160, 40);
-            btnAssemble.TabIndex = 3;
-            btnAssemble.Text = "Assemble";
-            btnAssemble.UseVisualStyleBackColor = true;
-            btnAssemble.Click += btnAssemble_Click;
-            // 
-            // btnClearAll
-            // 
-            btnClearAll.Location = new Point(743, 62);
-            btnClearAll.Name = "btnClearAll";
-            btnClearAll.Size = new Size(75, 23);
-            btnClearAll.TabIndex = 4;
-            btnClearAll.Text = "Clear All";
-            btnClearAll.UseVisualStyleBackColor = true;
-            btnClearAll.Click += btnClearAll_Click;
-            // 
-            // radioButtonArm32
-            // 
-            radioButtonArm32.AutoSize = true;
-            radioButtonArm32.Location = new Point(557, 53);
-            radioButtonArm32.Name = "radioButtonArm32";
-            radioButtonArm32.Size = new Size(63, 19);
-            radioButtonArm32.TabIndex = 5;
-            radioButtonArm32.TabStop = true;
-            radioButtonArm32.Text = "ARM32";
-            radioButtonArm32.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonArm64
-            // 
-            radioButtonArm64.AutoSize = true;
-            radioButtonArm64.Location = new Point(557, 74);
-            radioButtonArm64.Name = "radioButtonArm64";
-            radioButtonArm64.Size = new Size(63, 19);
-            radioButtonArm64.TabIndex = 6;
-            radioButtonArm64.TabStop = true;
-            radioButtonArm64.Text = "ARM64";
-            radioButtonArm64.UseVisualStyleBackColor = true;
             // 
             // statusStrip
             // 
@@ -139,169 +80,346 @@
             statusLabel.Size = new Size(1461, 17);
             statusLabel.Spring = true;
             // 
-            // btnInstallPythonLibs
+            // tabControlMain
             // 
-            btnInstallPythonLibs.Location = new Point(1304, 53);
-            btnInstallPythonLibs.Name = "btnInstallPythonLibs";
-            btnInstallPythonLibs.RightToLeft = RightToLeft.No;
-            btnInstallPythonLibs.Size = new Size(160, 40);
-            btnInstallPythonLibs.TabIndex = 8;
-            btnInstallPythonLibs.Text = "Install/Update Python Libs";
-            btnInstallPythonLibs.UseVisualStyleBackColor = true;
-            btnInstallPythonLibs.Click += btnInstallPythonLibs_Click;
+            tabControlMain.Controls.Add(tabPageMain);
+            tabControlMain.Controls.Add(tabPageInstructionRef);
+            tabControlMain.Location = new Point(0, 1);
+            tabControlMain.Name = "tabControlMain";
+            tabControlMain.SelectedIndex = 0;
+            tabControlMain.Size = new Size(1476, 808);
+            tabControlMain.TabIndex = 19;
             // 
-            // btnLoadInput
+            // tabPageMain
             // 
-            btnLoadInput.Location = new Point(12, 12);
-            btnLoadInput.Name = "btnLoadInput";
-            btnLoadInput.Size = new Size(75, 23);
-            btnLoadInput.TabIndex = 9;
-            btnLoadInput.Text = "Load Input";
-            btnLoadInput.UseVisualStyleBackColor = true;
-            btnLoadInput.Click += btnLoadInput_Click;
+            tabPageMain.Controls.Add(checkBoxAdvancedCaveMode);
+            tabPageMain.Controls.Add(btnGenerateCodeCave);
+            tabPageMain.Controls.Add(numericUpDownCaveLines);
+            tabPageMain.Controls.Add(textBoxCaveBaseAddress);
+            tabPageMain.Controls.Add(checkBoxShowRawOpcodes);
+            tabPageMain.Controls.Add(btnCopyOutput);
+            tabPageMain.Controls.Add(btnCopyInput);
+            tabPageMain.Controls.Add(btnSettings);
+            tabPageMain.Controls.Add(btnSaveOutput);
+            tabPageMain.Controls.Add(btnSaveInput);
+            tabPageMain.Controls.Add(btnLoadInput);
+            tabPageMain.Controls.Add(btnInstallPythonLibs);
+            tabPageMain.Controls.Add(radioButtonArm64);
+            tabPageMain.Controls.Add(radioButtonArm32);
+            tabPageMain.Controls.Add(btnClearAll);
+            tabPageMain.Controls.Add(btnAssemble);
+            tabPageMain.Controls.Add(btnDisassemble);
+            tabPageMain.Controls.Add(textBoxOutput);
+            tabPageMain.Controls.Add(textBoxInput);
+            tabPageMain.Location = new Point(4, 24);
+            tabPageMain.Name = "tabPageMain";
+            tabPageMain.Padding = new Padding(3);
+            tabPageMain.Size = new Size(1468, 780);
+            tabPageMain.TabIndex = 0;
+            tabPageMain.Text = "Assemble/Disassemble";
+            tabPageMain.UseVisualStyleBackColor = true;
+            tabPageMain.Click += tabPageMain_Click;
             // 
-            // btnSaveInput
+            // checkBoxAdvancedCaveMode
             // 
-            btnSaveInput.Location = new Point(12, 41);
-            btnSaveInput.Name = "btnSaveInput";
-            btnSaveInput.Size = new Size(75, 23);
-            btnSaveInput.TabIndex = 10;
-            btnSaveInput.Text = "Save Input";
-            btnSaveInput.UseVisualStyleBackColor = true;
-            btnSaveInput.Click += btnSaveInput_Click;
+            checkBoxAdvancedCaveMode.AutoSize = true;
+            checkBoxAdvancedCaveMode.Enabled = false;
+            checkBoxAdvancedCaveMode.Location = new Point(646, 62);
+            checkBoxAdvancedCaveMode.Name = "checkBoxAdvancedCaveMode";
+            checkBoxAdvancedCaveMode.Size = new Size(237, 19);
+            checkBoxAdvancedCaveMode.TabIndex = 37;
+            checkBoxAdvancedCaveMode.Text = "Advanced Mode (Not Implemented Yet)";
+            checkBoxAdvancedCaveMode.UseVisualStyleBackColor = true;
             // 
-            // btnSaveOutput
+            // btnGenerateCodeCave
             // 
-            btnSaveOutput.Location = new Point(1380, 12);
-            btnSaveOutput.Name = "btnSaveOutput";
-            btnSaveOutput.Size = new Size(84, 23);
-            btnSaveOutput.TabIndex = 11;
-            btnSaveOutput.Text = "Save Output";
-            btnSaveOutput.UseVisualStyleBackColor = true;
-            btnSaveOutput.Click += btnSaveOutput_Click;
+            btnGenerateCodeCave.Location = new Point(12, 725);
+            btnGenerateCodeCave.Name = "btnGenerateCodeCave";
+            btnGenerateCodeCave.Size = new Size(131, 23);
+            btnGenerateCodeCave.TabIndex = 36;
+            btnGenerateCodeCave.Text = "Generate Code Cave";
+            btnGenerateCodeCave.UseVisualStyleBackColor = true;
+            btnGenerateCodeCave.Click += btnGenerateCodeCave_Click;
             // 
-            // btnSettings
+            // numericUpDownCaveLines
             // 
-            btnSettings.Location = new Point(100, 53);
-            btnSettings.Name = "btnSettings";
-            btnSettings.Size = new Size(160, 40);
-            btnSettings.TabIndex = 12;
-            btnSettings.Text = "Settings";
-            btnSettings.UseVisualStyleBackColor = true;
-            btnSettings.Click += btnSettings_Click;
+            numericUpDownCaveLines.Location = new Point(352, 725);
+            numericUpDownCaveLines.Name = "numericUpDownCaveLines";
+            numericUpDownCaveLines.Size = new Size(62, 23);
+            numericUpDownCaveLines.TabIndex = 35;
             // 
-            // btnCopyInput
+            // textBoxCaveBaseAddress
             // 
-            btnCopyInput.Location = new Point(837, 62);
-            btnCopyInput.Name = "btnCopyInput";
-            btnCopyInput.Size = new Size(75, 23);
-            btnCopyInput.TabIndex = 13;
-            btnCopyInput.Text = "Copy Input";
-            btnCopyInput.UseVisualStyleBackColor = true;
-            btnCopyInput.Click += btnCopyInput_Click;
-            // 
-            // btnCopyOutput
-            // 
-            btnCopyOutput.Location = new Point(929, 62);
-            btnCopyOutput.Name = "btnCopyOutput";
-            btnCopyOutput.Size = new Size(89, 23);
-            btnCopyOutput.TabIndex = 14;
-            btnCopyOutput.Text = "Copy Output";
-            btnCopyOutput.UseVisualStyleBackColor = true;
-            btnCopyOutput.Click += btnCopyOutput_Click;
+            textBoxCaveBaseAddress.Location = new Point(149, 725);
+            textBoxCaveBaseAddress.Name = "textBoxCaveBaseAddress";
+            textBoxCaveBaseAddress.Size = new Size(197, 23);
+            textBoxCaveBaseAddress.TabIndex = 34;
+            textBoxCaveBaseAddress.Text = "[Main+R0+0x00000000]= ";
             // 
             // checkBoxShowRawOpcodes
             // 
             checkBoxShowRawOpcodes.AutoSize = true;
             checkBoxShowRawOpcodes.Checked = true;
             checkBoxShowRawOpcodes.CheckState = CheckState.Checked;
-            checkBoxShowRawOpcodes.Location = new Point(650, 66);
+            checkBoxShowRawOpcodes.Location = new Point(646, 87);
             checkBoxShowRawOpcodes.Name = "checkBoxShowRawOpcodes";
             checkBoxShowRawOpcodes.Size = new Size(80, 19);
-            checkBoxShowRawOpcodes.TabIndex = 15;
+            checkBoxShowRawOpcodes.TabIndex = 33;
             checkBoxShowRawOpcodes.Text = "Show Raw";
             checkBoxShowRawOpcodes.UseVisualStyleBackColor = true;
-            checkBoxShowRawOpcodes.CheckedChanged += checkBoxShowRawOpcodes_CheckedChanged;
+            checkBoxShowRawOpcodes.Click += checkBoxShowRawOpcodes_CheckedChanged;
             // 
-            // textBoxCaveBaseAddress
+            // btnCopyOutput
             // 
-            textBoxCaveBaseAddress.Location = new Point(153, 704);
-            textBoxCaveBaseAddress.Name = "textBoxCaveBaseAddress";
-            textBoxCaveBaseAddress.Size = new Size(197, 23);
-            textBoxCaveBaseAddress.TabIndex = 16;
-            textBoxCaveBaseAddress.Text = "[Main+R0+0x00000000]= ";
+            btnCopyOutput.Location = new Point(925, 83);
+            btnCopyOutput.Name = "btnCopyOutput";
+            btnCopyOutput.Size = new Size(89, 23);
+            btnCopyOutput.TabIndex = 32;
+            btnCopyOutput.Text = "Copy Output";
+            btnCopyOutput.UseVisualStyleBackColor = true;
+            btnCopyOutput.Click += btnCopyOutput_Click;
             // 
-            // numericUpDownCaveLines
+            // btnCopyInput
             // 
-            numericUpDownCaveLines.Location = new Point(356, 704);
-            numericUpDownCaveLines.Name = "numericUpDownCaveLines";
-            numericUpDownCaveLines.Size = new Size(62, 23);
-            numericUpDownCaveLines.TabIndex = 17;
+            btnCopyInput.Location = new Point(833, 83);
+            btnCopyInput.Name = "btnCopyInput";
+            btnCopyInput.Size = new Size(75, 23);
+            btnCopyInput.TabIndex = 31;
+            btnCopyInput.Text = "Copy Input";
+            btnCopyInput.UseVisualStyleBackColor = true;
+            btnCopyInput.Click += btnCopyInput_Click;
             // 
-            // btnGenerateCodeCave
+            // btnSettings
             // 
-            btnGenerateCodeCave.Location = new Point(16, 704);
-            btnGenerateCodeCave.Name = "btnGenerateCodeCave";
-            btnGenerateCodeCave.Size = new Size(131, 23);
-            btnGenerateCodeCave.TabIndex = 18;
-            btnGenerateCodeCave.Text = "Generate Code Cave";
-            btnGenerateCodeCave.UseVisualStyleBackColor = true;
-            btnGenerateCodeCave.Click += btnGenerateCodeCave_Click;
+            btnSettings.Location = new Point(96, 74);
+            btnSettings.Name = "btnSettings";
+            btnSettings.Size = new Size(160, 40);
+            btnSettings.TabIndex = 30;
+            btnSettings.Text = "Settings";
+            btnSettings.UseVisualStyleBackColor = true;
+            btnSettings.Click += btnSettings_Click;
+            // 
+            // btnSaveOutput
+            // 
+            btnSaveOutput.Location = new Point(1376, 33);
+            btnSaveOutput.Name = "btnSaveOutput";
+            btnSaveOutput.Size = new Size(84, 23);
+            btnSaveOutput.TabIndex = 29;
+            btnSaveOutput.Text = "Save Output";
+            btnSaveOutput.UseVisualStyleBackColor = true;
+            btnSaveOutput.Click += btnSaveOutput_Click;
+            // 
+            // btnSaveInput
+            // 
+            btnSaveInput.Location = new Point(8, 62);
+            btnSaveInput.Name = "btnSaveInput";
+            btnSaveInput.Size = new Size(75, 23);
+            btnSaveInput.TabIndex = 28;
+            btnSaveInput.Text = "Save Input";
+            btnSaveInput.UseVisualStyleBackColor = true;
+            btnSaveInput.Click += btnSaveInput_Click;
+            // 
+            // btnLoadInput
+            // 
+            btnLoadInput.Location = new Point(8, 33);
+            btnLoadInput.Name = "btnLoadInput";
+            btnLoadInput.Size = new Size(75, 23);
+            btnLoadInput.TabIndex = 27;
+            btnLoadInput.Text = "Load Input";
+            btnLoadInput.UseVisualStyleBackColor = true;
+            btnLoadInput.Click += btnLoadInput_Click;
+            // 
+            // btnInstallPythonLibs
+            // 
+            btnInstallPythonLibs.Location = new Point(1300, 74);
+            btnInstallPythonLibs.Name = "btnInstallPythonLibs";
+            btnInstallPythonLibs.RightToLeft = RightToLeft.No;
+            btnInstallPythonLibs.Size = new Size(160, 40);
+            btnInstallPythonLibs.TabIndex = 26;
+            btnInstallPythonLibs.Text = "Install/Update Python Libs";
+            btnInstallPythonLibs.UseVisualStyleBackColor = true;
+            btnInstallPythonLibs.Click += btnInstallPythonLibs_Click;
+            // 
+            // radioButtonArm64
+            // 
+            radioButtonArm64.AutoSize = true;
+            radioButtonArm64.Location = new Point(553, 95);
+            radioButtonArm64.Name = "radioButtonArm64";
+            radioButtonArm64.Size = new Size(63, 19);
+            radioButtonArm64.TabIndex = 25;
+            radioButtonArm64.TabStop = true;
+            radioButtonArm64.Text = "ARM64";
+            radioButtonArm64.UseVisualStyleBackColor = true;
+            // 
+            // radioButtonArm32
+            // 
+            radioButtonArm32.AutoSize = true;
+            radioButtonArm32.Location = new Point(553, 74);
+            radioButtonArm32.Name = "radioButtonArm32";
+            radioButtonArm32.Size = new Size(63, 19);
+            radioButtonArm32.TabIndex = 24;
+            radioButtonArm32.TabStop = true;
+            radioButtonArm32.Text = "ARM32";
+            radioButtonArm32.UseVisualStyleBackColor = true;
+            // 
+            // btnClearAll
+            // 
+            btnClearAll.Location = new Point(739, 83);
+            btnClearAll.Name = "btnClearAll";
+            btnClearAll.Size = new Size(75, 23);
+            btnClearAll.TabIndex = 23;
+            btnClearAll.Text = "Clear All";
+            btnClearAll.UseVisualStyleBackColor = true;
+            btnClearAll.Click += btnClearAll_Click;
+            // 
+            // btnAssemble
+            // 
+            btnAssemble.Location = new Point(1083, 74);
+            btnAssemble.Name = "btnAssemble";
+            btnAssemble.Size = new Size(160, 40);
+            btnAssemble.TabIndex = 22;
+            btnAssemble.Text = "Assemble";
+            btnAssemble.UseVisualStyleBackColor = true;
+            btnAssemble.Click += btnAssemble_Click;
+            // 
+            // btnDisassemble
+            // 
+            btnDisassemble.Location = new Point(307, 74);
+            btnDisassemble.Name = "btnDisassemble";
+            btnDisassemble.Size = new Size(160, 40);
+            btnDisassemble.TabIndex = 21;
+            btnDisassemble.Text = "Disassemble";
+            btnDisassemble.UseVisualStyleBackColor = true;
+            btnDisassemble.Click += btnDisassemble_Click;
+            // 
+            // textBoxOutput
+            // 
+            textBoxOutput.Location = new Point(626, 120);
+            textBoxOutput.Name = "textBoxOutput";
+            textBoxOutput.ReadOnly = true;
+            textBoxOutput.Size = new Size(834, 587);
+            textBoxOutput.TabIndex = 20;
+            textBoxOutput.Text = "";
+            textBoxOutput.WordWrap = false;
+            // 
+            // textBoxInput
+            // 
+            textBoxInput.Location = new Point(12, 120);
+            textBoxInput.Name = "textBoxInput";
+            textBoxInput.ScrollBars = RichTextBoxScrollBars.Vertical;
+            textBoxInput.Size = new Size(608, 587);
+            textBoxInput.TabIndex = 19;
+            textBoxInput.Text = "";
+            textBoxInput.Click += TextBoxInput_TextChanged;
+            // 
+            // tabPageInstructionRef
+            // 
+            tabPageInstructionRef.Controls.Add(richTextBoxInstructionDetails);
+            tabPageInstructionRef.Controls.Add(lblInstructionDetails);
+            tabPageInstructionRef.Controls.Add(listBoxInstructions);
+            tabPageInstructionRef.Controls.Add(textBoxSearchInstruction);
+            tabPageInstructionRef.Controls.Add(lblSearchInstruction);
+            tabPageInstructionRef.Location = new Point(4, 24);
+            tabPageInstructionRef.Name = "tabPageInstructionRef";
+            tabPageInstructionRef.Padding = new Padding(3);
+            tabPageInstructionRef.Size = new Size(1468, 780);
+            tabPageInstructionRef.TabIndex = 1;
+            tabPageInstructionRef.Text = "Instruction Reference";
+            tabPageInstructionRef.UseVisualStyleBackColor = true;
+            tabPageInstructionRef.Click += tabPageInstructionRef_Click;
+            // 
+            // richTextBoxInstructionDetails
+            // 
+            richTextBoxInstructionDetails.Location = new Point(485, 105);
+            richTextBoxInstructionDetails.Name = "richTextBoxInstructionDetails";
+            richTextBoxInstructionDetails.ReadOnly = true;
+            richTextBoxInstructionDetails.Size = new Size(413, 454);
+            richTextBoxInstructionDetails.TabIndex = 4;
+            richTextBoxInstructionDetails.Text = "";
+            // 
+            // lblInstructionDetails
+            // 
+            lblInstructionDetails.AutoSize = true;
+            lblInstructionDetails.Location = new Point(671, 86);
+            lblInstructionDetails.Name = "lblInstructionDetails";
+            lblInstructionDetails.Size = new Size(45, 15);
+            lblInstructionDetails.TabIndex = 3;
+            lblInstructionDetails.Text = "Details:";
+            // 
+            // listBoxInstructions
+            // 
+            listBoxInstructions.FormattingEnabled = true;
+            listBoxInstructions.Location = new Point(114, 105);
+            listBoxInstructions.Name = "listBoxInstructions";
+            listBoxInstructions.Size = new Size(365, 454);
+            listBoxInstructions.TabIndex = 2;
+            // 
+            // textBoxSearchInstruction
+            // 
+            textBoxSearchInstruction.Location = new Point(251, 50);
+            textBoxSearchInstruction.Name = "textBoxSearchInstruction";
+            textBoxSearchInstruction.Size = new Size(228, 23);
+            textBoxSearchInstruction.TabIndex = 1;
+            // 
+            // lblSearchInstruction
+            // 
+            lblSearchInstruction.AutoSize = true;
+            lblSearchInstruction.Location = new Point(140, 53);
+            lblSearchInstruction.Name = "lblSearchInstruction";
+            lblSearchInstruction.Size = new Size(105, 15);
+            lblSearchInstruction.TabIndex = 0;
+            lblSearchInstruction.Text = "Search Instruction:";
             // 
             // CheatToolGUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1476, 834);
-            Controls.Add(btnGenerateCodeCave);
-            Controls.Add(numericUpDownCaveLines);
-            Controls.Add(textBoxCaveBaseAddress);
-            Controls.Add(checkBoxShowRawOpcodes);
-            Controls.Add(btnCopyOutput);
-            Controls.Add(btnCopyInput);
-            Controls.Add(btnSettings);
-            Controls.Add(btnSaveOutput);
-            Controls.Add(btnSaveInput);
-            Controls.Add(btnLoadInput);
-            Controls.Add(btnInstallPythonLibs);
+            Controls.Add(tabControlMain);
             Controls.Add(statusStrip);
-            Controls.Add(radioButtonArm64);
-            Controls.Add(radioButtonArm32);
-            Controls.Add(btnClearAll);
-            Controls.Add(btnAssemble);
-            Controls.Add(btnDisassemble);
-            Controls.Add(textBoxOutput);
-            Controls.Add(textBoxInput);
             Name = "CheatToolGUI";
             Text = "Form1";
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
+            tabControlMain.ResumeLayout(false);
+            tabPageMain.ResumeLayout(false);
+            tabPageMain.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numericUpDownCaveLines).EndInit();
+            tabPageInstructionRef.ResumeLayout(false);
+            tabPageInstructionRef.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private RichTextBox textBoxInput;
-        private RichTextBox textBoxOutput;
-        private Button btnDisassemble;
-        private Button btnAssemble;
-        private Button btnClearAll;
-        private RadioButton radioButtonArm32;
-        private RadioButton radioButtonArm64;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
-        private Button btnInstallPythonLibs;
-        private Button btnLoadInput;
-        private Button btnSaveInput;
-        private Button btnSaveOutput;
-        private Button btnSettings;
-        private Button btnCopyInput;
-        private Button btnCopyOutput;
-        private CheckBox checkBoxShowRawOpcodes;
-        private TextBox textBoxCaveBaseAddress;
-        private NumericUpDown numericUpDownCaveLines;
+        private TabControl tabControlMain;
+        private TabPage tabPageMain;
+        private TabPage tabPageInstructionRef;
         private Button btnGenerateCodeCave;
+        private NumericUpDown numericUpDownCaveLines;
+        private TextBox textBoxCaveBaseAddress;
+        private CheckBox checkBoxShowRawOpcodes;
+        private Button btnCopyOutput;
+        private Button btnCopyInput;
+        private Button btnSettings;
+        private Button btnSaveOutput;
+        private Button btnSaveInput;
+        private Button btnLoadInput;
+        private Button btnInstallPythonLibs;
+        private RadioButton radioButtonArm64;
+        private RadioButton radioButtonArm32;
+        private Button btnClearAll;
+        private Button btnAssemble;
+        private Button btnDisassemble;
+        private RichTextBox textBoxOutput;
+        private RichTextBox textBoxInput;
+        private Label lblSearchInstruction;
+        private RichTextBox richTextBoxInstructionDetails;
+        private Label lblInstructionDetails;
+        private ListBox listBoxInstructions;
+        private TextBox textBoxSearchInstruction;
+        private CheckBox checkBoxAdvancedCaveMode;
     }
 }

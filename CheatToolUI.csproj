@@ -8,7 +8,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>output.ico</ApplicationIcon>
-    <BuildCounter>0</BuildCounter>
+    <BuildCounter>1</BuildCounter>
     <Revision>*</Revision>
     <MajorMinorVersion>1.2</MajorMinorVersion>
     <Version>$(MajorMinorVersion).$(BuildCounter)</Version>
@@ -27,6 +27,9 @@
     </None>
     <None Update="assemble_cheats.py">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="InstructionData.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

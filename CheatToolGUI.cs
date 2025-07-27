@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace CheatToolUI
@@ -20,6 +22,11 @@ namespace CheatToolUI
         private string disassembleScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ARMdisassemble_cheats.py");
 
         private AppSettings currentAppSettings;
+
+        private List<Instruction> allInstructions;
+        private const string InstructionDataFileName = "InstructionData.json";
+
+        private bool isHighlighting = false;
 
         public CheatToolGUI()
         {
@@ -35,6 +42,15 @@ namespace CheatToolUI
             ResolvePythonPath();
 
             textBoxOutput.Font = new Font("Consolas", 9.75F, FontStyle.Regular);
+            textBoxInput.Font = new Font("Consolas", 9.75F, FontStyle.Regular);
+
+            LoadInstructions();
+
+            textBoxSearchInstruction.TextChanged += TextBoxSearchInstruction_TextChanged;
+            listBoxInstructions.SelectedIndexChanged += ListBoxInstructions_SelectedIndexChanged;
+
+            textBoxInput.TextChanged += TextBoxInput_TextChanged;
+            HighlightSyntax();
         }
 
         private void ApplySettingsToUI()
@@ -100,7 +116,7 @@ namespace CheatToolUI
             DisableUI();
 
             string inputCode = textBoxInput.Text;
-            string targetArch = radioButtonArm32.Checked ? "ARM32" : "ARM64"; // Get selected arch from UI
+            string targetArch = radioButtonArm32.Checked ? "ARM32" : "ARM64";
             var result = await RunPythonScriptAsync(assembleScriptPath, inputCode, targetArch);
 
             textBoxOutput.Text = result.Output;
@@ -369,6 +385,11 @@ namespace CheatToolUI
             textBoxCaveBaseAddress.Enabled = false;
             numericUpDownCaveLines.Enabled = false;
             btnGenerateCodeCave.Enabled = false;
+
+            textBoxSearchInstruction.Enabled = false;
+            listBoxInstructions.Enabled = false;
+            richTextBoxInstructionDetails.Enabled = false;
+
             this.Cursor = Cursors.WaitCursor;
         }
 
@@ -393,6 +414,11 @@ namespace CheatToolUI
             textBoxCaveBaseAddress.Enabled = true;
             numericUpDownCaveLines.Enabled = true;
             btnGenerateCodeCave.Enabled = true;
+
+            textBoxSearchInstruction.Enabled = true;
+            listBoxInstructions.Enabled = true;
+            richTextBoxInstructionDetails.Enabled = true;
+
             this.Cursor = Cursors.Default;
         }
 
@@ -598,15 +624,8 @@ namespace CheatToolUI
                 return;
             }
 
-            // Use a StringBuilder for efficient string concatenation
             StringBuilder outputBuilder = new StringBuilder();
 
-            // Regular expression to find the hexadecimal address part
-            // This regex looks for 0x followed by one or more hex characters
-            // and captures it, along with the prefix and suffix.
-            // Group 1: Prefix (e.g., [Main+R0+)
-            // Group 2: The 0xhexaddress
-            // Group 3: Suffix (e.g., =)
             System.Text.RegularExpressions.Match match =
                 System.Text.RegularExpressions.Regex.Match(inputLine, @"^(.+)(0x[0-9a-fA-F]+)(.*)$");
 
@@ -617,28 +636,205 @@ namespace CheatToolUI
             }
 
             string prefix = match.Groups[1].Value;
-            string hexAddressString = match.Groups[2].Value; // e.g., "0x0004E4B640"
-            string suffix = match.Groups[3].Value; // e.g., "="
+            string hexAddressString = match.Groups[2].Value;
+            string suffix = match.Groups[3].Value;
 
-            // Parse the hexadecimal address
-            // Remove "0x" prefix for parsing
             if (!long.TryParse(hexAddressString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out long baseAddress))
             {
                 SetStatus($"Failed to parse hexadecimal address: {hexAddressString}", true);
                 return;
             }
 
-            // Generate the lines
             for (int i = 0; i < numberOfLines; i++)
             {
-                long currentAddress = baseAddress + (long)(i * 4); // Increment by 4 bytes (standard instruction size)
-                string currentHexAddress = $"0x{currentAddress:X}"; // Format back to hex with "0x" and uppercase
+                long currentAddress = baseAddress + (long)(i * 4);
+                string currentHexAddress = $"0x{currentAddress:X}";
 
                 outputBuilder.AppendLine($"{prefix}{currentHexAddress}{suffix}");
             }
 
             textBoxOutput.Text = outputBuilder.ToString();
             SetStatus($"Generated {numberOfLines} code cave lines.");
+        }
+
+        private void LoadInstructions()
+        {
+            string instructionFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, InstructionDataFileName);
+            if (File.Exists(instructionFilePath))
+            {
+                try
+                {
+                    string jsonString = File.ReadAllText(instructionFilePath);
+                    allInstructions = JsonSerializer.Deserialize<List<Instruction>>(jsonString);
+                    SetStatus("Instruction reference data loaded.");
+                    PopulateInstructionListBox(allInstructions);
+                }
+                catch (Exception ex)
+                {
+                    allInstructions = new List<Instruction>();
+                    SetStatus($"ERROR loading instruction data: {ex.Message}", true);
+                    MessageBox.Show($"Could not load instruction data from '{InstructionDataFileName}'. Please ensure it's a valid JSON file. Error: {ex.Message}", "Instruction Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                allInstructions = new List<Instruction>();
+                SetStatus($"WARNING: Instruction data file '{InstructionDataFileName}' not found.", true);
+                MessageBox.Show($"Instruction data file '{InstructionDataFileName}' not found. The instruction reference feature will not be available.", "Instruction Data Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void PopulateInstructionListBox(List<Instruction> instructionsToDisplay)
+        {
+            listBoxInstructions.DataSource = null;
+            if (instructionsToDisplay != null)
+            {
+                listBoxInstructions.DisplayMember = "Name";
+                listBoxInstructions.ValueMember = "Name";
+                listBoxInstructions.DataSource = instructionsToDisplay.OrderBy(i => i.Name).ToList();
+            }
+        }
+
+        private void TextBoxSearchInstruction_TextChanged(object sender, EventArgs e)
+        {
+            string searchTerm = textBoxSearchInstruction.Text.Trim();
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                PopulateInstructionListBox(allInstructions);
+            }
+            else
+            {
+                var filteredInstructions = allInstructions
+                    .Where(i => i.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                PopulateInstructionListBox(filteredInstructions);
+            }
+        }
+
+        private void ListBoxInstructions_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listBoxInstructions.SelectedItem is Instruction selectedInstruction)
+            {
+                richTextBoxInstructionDetails.SelectAll();
+                richTextBoxInstructionDetails.SelectionColor = richTextBoxInstructionDetails.ForeColor;
+                richTextBoxInstructionDetails.SelectionFont = richTextBoxInstructionDetails.Font;
+                richTextBoxInstructionDetails.Clear();
+
+                richTextBoxInstructionDetails.SelectionFont = new Font(richTextBoxInstructionDetails.Font, FontStyle.Bold);
+                richTextBoxInstructionDetails.AppendText($"{selectedInstruction.Name}\n\n");
+
+                richTextBoxInstructionDetails.SelectionFont = new Font(richTextBoxInstructionDetails.Font, FontStyle.Regular);
+                richTextBoxInstructionDetails.AppendText("Architectures: ");
+                richTextBoxInstructionDetails.SelectionFont = new Font(richTextBoxInstructionDetails.Font, FontStyle.Bold);
+                richTextBoxInstructionDetails.AppendText(string.Join(", ", selectedInstruction.Architectures));
+                richTextBoxInstructionDetails.AppendText("\n\n");
+
+                richTextBoxInstructionDetails.SelectionFont = new Font(richTextBoxInstructionDetails.Font, FontStyle.Regular);
+                richTextBoxInstructionDetails.AppendText("Syntax:\n");
+                foreach (string syntaxLine in selectedInstruction.Syntax)
+                {
+                    richTextBoxInstructionDetails.SelectionFont = new Font("Consolas", richTextBoxInstructionDetails.Font.Size, FontStyle.Italic);
+                    richTextBoxInstructionDetails.AppendText($"  {syntaxLine}\n");
+                }
+                richTextBoxInstructionDetails.AppendText("\n");
+
+                richTextBoxInstructionDetails.SelectionFont = new Font(richTextBoxInstructionDetails.Font, FontStyle.Regular);
+                richTextBoxInstructionDetails.AppendText("Description:\n");
+                richTextBoxInstructionDetails.AppendText(selectedInstruction.Description);
+            }
+            else
+            {
+                richTextBoxInstructionDetails.Clear();
+            }
+        }
+
+        private void TextBoxInput_TextChanged(object sender, EventArgs e)
+        {
+            if (isHighlighting) return;
+            HighlightSyntax();
+        }
+
+        private void HighlightSyntax()
+        {
+            isHighlighting = true;
+            int originalSelectionStart = textBoxInput.SelectionStart;
+            int originalSelectionLength = textBoxInput.SelectionLength;
+
+            // Set default text color to Black before applying specific highlights
+            textBoxInput.SelectAll();
+            textBoxInput.SelectionColor = Color.Black; // Changed from Color.White
+            textBoxInput.SelectionFont = new Font("Consolas", 9.75F, FontStyle.Regular);
+            textBoxInput.DeselectAll();
+
+            Regex opcodeRegex = new Regex(@"^\s*([a-zA-Z]{2,6})\b", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            Regex registerRegex = new Regex(@"\b(X(?:[0-2]?[0-9]|30|ZR)|W(?:[0-2]?[0-9]|30|ZR)|LR|SP|PC|R(?:[0-9]|1[0-5]|LR|SP|PC)|CPSR|SPSR|APSR|IP)\b", RegexOptions.IgnoreCase);
+            Regex hexLiteralRegex = new Regex(@"\b0x[0-9a-fA-F]+\b", RegexOptions.IgnoreCase);
+            Regex decimalLiteralRegex = new Regex(@"\b#?-?\d+\b", RegexOptions.IgnoreCase);
+            Regex commentRegex = new Regex(@";.*$", RegexOptions.Multiline);
+            Regex labelRegex = new Regex(@"^\s*([a-zA-Z_][a-zA-Z0-9_]*):", RegexOptions.Multiline);
+
+            string[] lines = textBoxInput.Lines;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                int lineStart = textBoxInput.GetFirstCharIndexFromLine(i);
+
+                Match labelMatch = labelRegex.Match(line);
+                if (labelMatch.Success)
+                {
+                    textBoxInput.Select(lineStart + labelMatch.Groups[1].Index, labelMatch.Groups[1].Length);
+                    textBoxInput.SelectionColor = Color.LightGreen;
+                    textBoxInput.Select(lineStart + labelMatch.Index + labelMatch.Length - 1, 1);
+                    textBoxInput.SelectionColor = Color.Silver;
+                }
+
+                Match commentMatch = commentRegex.Match(line);
+                if (commentMatch.Success)
+                {
+                    textBoxInput.Select(lineStart + commentMatch.Index, commentMatch.Length);
+                    textBoxInput.SelectionColor = Color.DarkGray;
+                }
+            }
+
+            foreach (Match match in opcodeRegex.Matches(textBoxInput.Text))
+            {
+                textBoxInput.Select(match.Groups[1].Index, match.Groups[1].Length);
+                textBoxInput.SelectionColor = Color.Cyan;
+            }
+
+            foreach (Match match in registerRegex.Matches(textBoxInput.Text))
+            {
+                textBoxInput.Select(match.Index, match.Length);
+                textBoxInput.SelectionColor = Color.Orange;
+            }
+
+            foreach (Match match in hexLiteralRegex.Matches(textBoxInput.Text))
+            {
+                textBoxInput.Select(match.Index, match.Length);
+                textBoxInput.SelectionColor = Color.LightCoral;
+            }
+
+            foreach (Match match in decimalLiteralRegex.Matches(textBoxInput.Text))
+            {
+                textBoxInput.Select(match.Index, match.Length);
+                textBoxInput.SelectionColor = Color.LightCoral;
+            }
+
+            textBoxInput.SelectionStart = originalSelectionStart;
+            textBoxInput.SelectionLength = originalSelectionLength;
+            textBoxInput.SelectionColor = textBoxInput.ForeColor; // This line might be redundant if we set default to Black
+            textBoxInput.SelectionFont = new Font("Consolas", 9.75F, FontStyle.Regular);
+            isHighlighting = false;
+        }
+
+        private void tabPageMain_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tabPageInstructionRef_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
