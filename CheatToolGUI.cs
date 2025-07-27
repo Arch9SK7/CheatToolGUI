@@ -100,8 +100,7 @@ namespace CheatToolUI
             DisableUI();
 
             string inputCode = textBoxInput.Text;
-            string targetArch = "ARM64";
-
+            string targetArch = radioButtonArm32.Checked ? "ARM32" : "ARM64"; // Get selected arch from UI
             var result = await RunPythonScriptAsync(assembleScriptPath, inputCode, targetArch);
 
             textBoxOutput.Text = result.Output;
