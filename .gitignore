@@ -53,8 +53,4 @@ dkms.conf
 *.json
 /.vs
 /obj
-/obj
-*.json
-obj/CheatToolUI.csproj.nuget.dgspec.json
-obj/project.assets.json
 /bin
