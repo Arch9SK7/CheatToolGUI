@@ -1,14 +1,16 @@
 import sys
+import argparse
 from enum import Enum
 
 try:
-    from capstone import Cs, CS_ARCH_ARM64, CS_ARCH_ARM, CS_MODE_ARM, CS_MODE_THUMB
+    from capstone import Cs, CS_ARCH_ARM64, CS_ARCH_ARM, CS_MODE_ARM, CS_MODE_THUMB, CS_OPT_DETAIL
     CAPSTONE_AVAILABLE = True
 except ImportError:
     CAPSTONE_AVAILABLE = False
     print("FATAL ERROR: Capstone library not found. Please install it with 'pip install capstone-engine'", file=sys.stderr)
 
 TARGET_ARCH = None
+SHOW_RAW_OPCODES = True
 
 class CheatVmOpcodeType(Enum):
     StoreStatic = 0
@@ -72,7 +74,7 @@ class StoreRegisterOffsetType(Enum):
     MemReg = 3
     MemImm = 4
     MemImmReg = 5
-    
+
 class CompareRegisterValueType(Enum):
     MemoryRelAddr = 0
     MemoryOfsReg = 1
@@ -81,7 +83,7 @@ class CompareRegisterValueType(Enum):
     StaticValue = 4
     OtherRegister = 5
     OffsetValue = 6
-    
+
 class SaveRestoreRegisterOpType(Enum):
     Restore = 0
     Save = 1
@@ -128,7 +130,6 @@ OPERAND_STR = {
     SaveRestoreRegisterOpType.ClearRegs: "ClearRegs",
 }
 
-
 class VmInt:
     def __init__(self, value=0):
         self.value = value
@@ -146,7 +147,7 @@ def get_next_dword(opcodes, instruction_ptr):
 
 def get_next_vm_int(opcodes, instruction_ptr, bit_width):
     val = VmInt()
-    
+
     first_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
     if first_dword is None:
         return None, instruction_ptr
@@ -164,9 +165,8 @@ def get_next_vm_int(opcodes, instruction_ptr, bit_width):
         val.value = (first_dword << 32) | second_dword
     else:
         val.value = first_dword
-        
-    return val, instruction_ptr
 
+    return val, instruction_ptr
 
 def mem_type_str(mem_type):
     if mem_type == MemoryAccessType.MainNso: return "Main"
@@ -178,11 +178,11 @@ def mem_type_str(mem_type):
 def arm64_disassemble(value, address):
     if not CAPSTONE_AVAILABLE:
         return ""
-    
+
     try:
         md = Cs(CS_ARCH_ARM64, CS_MODE_ARM)
         code = (value & 0xFFFFFFFF).to_bytes(4, byteorder='little')
-        
+
         disassembled = []
         for i in md.disasm(code, address):
             disassembled.append(f"{i.mnemonic} {i.op_str}")
@@ -194,9 +194,9 @@ def arm64_disassemble(value, address):
 def arm32_disassemble(value, address):
     if not CAPSTONE_AVAILABLE:
         return ""
-    
+
     code = value.to_bytes(4, byteorder='little')
-    
+
     md_arm = Cs(CS_ARCH_ARM, CS_MODE_ARM)
     disassembled = []
     try:
@@ -219,16 +219,15 @@ def arm32_disassemble(value, address):
 
     return ""
 
-
 def decode_next_opcode(opcodes, index):
     instruction_ptr = index
-    
+
     first_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
     if first_dword is None:
         return None
 
     out = CheatVmOpcode()
-    
+
     opcode_val = (first_dword >> 28) & 0xF
     if opcode_val >= CheatVmOpcodeType.ExtendedWidth.value:
         opcode_val = (opcode_val << 4) | ((first_dword >> 24) & 0xF)
@@ -247,15 +246,14 @@ def decode_next_opcode(opcodes, index):
         mem_type = MemoryAccessType((first_dword >> 20) & 0xF)
         offset_register = (first_dword >> 16) & 0xF
         second_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
-        
+
         rel_address_high_8 = first_dword & 0xFF
         rel_address = (rel_address_high_8 << 32) | second_dword
-        
+
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
-        
-        # Modified line for desired output
+
         out.str = f"[{mem_type_str(mem_type)}+R{offset_register}+0x{rel_address:010X}]= "
-        
+
         if CAPSTONE_AVAILABLE:
             if bit_width == 8:
                 high_32_bits = (value.value >> 32) & 0xFFFFFFFF
@@ -276,7 +274,7 @@ def decode_next_opcode(opcodes, index):
                     combined_asm.append(f"{asm_low}")
                 if asm_high:
                     combined_asm.append(f"{asm_high}")
-                
+
                 if combined_asm:
                     out.str += f"{'; '.join(combined_asm)}"
                 else:
@@ -295,7 +293,7 @@ def decode_next_opcode(opcodes, index):
                     out.str += "Disassembly type not determined"
         else:
             out.str += "Disassembly skipped - Capstone not available"
-    
+
     elif out.opcode == CheatVmOpcodeType.BeginConditionalBlock:
         bit_width = (first_dword >> 24) & 0xF
         mem_type = MemoryAccessType((first_dword >> 20) & 0xF)
@@ -305,7 +303,7 @@ def decode_next_opcode(opcodes, index):
         second_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
         rel_address_high_8 = first_dword & 0xFF
         rel_address = (rel_address_high_8 << 32) | second_dword
-        
+
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
         ofs_reg_str = f"R{ofs_reg_index}+" if include_ofs_reg else ""
         out.str = f"If [{mem_type_str(mem_type)}+{ofs_reg_str}0x{rel_address:010X}] {CONDITION_STR.get(cond_type, '?')} 0x{value.value:X}"
@@ -335,10 +333,10 @@ def decode_next_opcode(opcodes, index):
         load_from_reg_type = (first_dword >> 12) & 0xF
         offset_register = (first_dword >> 8) & 0xF
         second_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
-        
+
         rel_address_high_8 = first_dword & 0xFF
         rel_address = (rel_address_high_8 << 32) | second_dword
-        
+
         if load_from_reg_type == 3:
             out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+R{offset_register}+0x{rel_address:010X}] W={bit_width}"
         elif load_from_reg_type == 1:
@@ -348,7 +346,6 @@ def decode_next_opcode(opcodes, index):
         else:
             out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+0x{rel_address:010X}] W={bit_width}"
 
-
     elif out.opcode == CheatVmOpcodeType.StoreStaticToAddress:
         bit_width = (first_dword >> 24) & 0xF
         reg_index = (first_dword >> 16) & 0xF
@@ -356,7 +353,7 @@ def decode_next_opcode(opcodes, index):
         add_offset_reg = ((first_dword >> 8) & 0xF) != 0
         offset_reg_index = (first_dword >> 4) & 0xF
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, 8)
-        
+
         if add_offset_reg:
             out.str = f"[R{reg_index}+R{offset_reg_index}] = 0x{value.value:016X} W={bit_width}"
         else:
@@ -374,7 +371,7 @@ def decode_next_opcode(opcodes, index):
     elif out.opcode == CheatVmOpcodeType.BeginKeypressConditionalBlock:
         key_mask = first_dword & 0x0FFFFFFF
         out.str = f"If keyheld 0x{key_mask:X}"
-        
+
     elif out.opcode == CheatVmOpcodeType.PerformArithmeticRegister:
         bit_width = (first_dword >> 24) & 0xF
         math_type = RegisterArithmeticType((first_dword >> 20) & 0xF)
@@ -387,7 +384,7 @@ def decode_next_opcode(opcodes, index):
         else:
             src_reg_2_index = (first_dword >> 4) & 0xF
             out.str = f"R{dst_reg_index} = R{src_reg_1_index} {MATH_STR.get(math_type, '?')} R{src_reg_2_index} W={bit_width}"
-    
+
     elif out.opcode == CheatVmOpcodeType.StoreRegisterToAddress:
         bit_width = (first_dword >> 24) & 0xF
         str_reg_index = (first_dword >> 20) & 0xF
@@ -415,17 +412,17 @@ def decode_next_opcode(opcodes, index):
             mem_type = MemoryAccessType(ofs_reg_or_mem_type)
             rel_address, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, 4)
             addr_str = f"[{mem_type_str(mem_type)}+R{addr_reg_index}+0x{rel_address.value:X}]"
-        
+
         out.str = f"{addr_str} = R{str_reg_index} W={bit_width}"
         if increment_reg:
             out.str += f" R{addr_reg_index} += {bit_width}"
-            
+
     elif out.opcode == CheatVmOpcodeType.BeginRegisterConditionalBlock:
         bit_width = (first_dword >> 20) & 0xF
         cond_type = ConditionalComparisonType((first_dword >> 16) & 0xF)
         val_reg_index = (first_dword >> 12) & 0xF
         comp_type = CompareRegisterValueType((first_dword >> 8) & 0xF)
-        
+
         comp_str = ""
         if comp_type == CompareRegisterValueType.StaticValue:
             value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
@@ -438,7 +435,7 @@ def decode_next_opcode(opcodes, index):
             comp_str = f"0x{value.value:X}"
         else:
             mem_type_or_reg_idx = (first_dword >> 4) & 0xF
-            
+
             if comp_type in [CompareRegisterValueType.MemoryRelAddr, CompareRegisterValueType.RegisterRelAddr]:
                 rel_address, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, 4)
                 if comp_type == CompareRegisterValueType.MemoryRelAddr:
@@ -456,39 +453,39 @@ def decode_next_opcode(opcodes, index):
                     addr_reg_index = mem_type_or_reg_idx
                     comp_str = f"[R{addr_reg_index}+R{ofs_reg_index}]"
         out.str = f"If R{val_reg_index} {CONDITION_STR.get(cond_type, '?')} {comp_str} W={bit_width}"
-        
+
     elif out.opcode == CheatVmOpcodeType.SaveRestoreRegister:
         dst_index = (first_dword >> 16) & 0xF
         src_index = (first_dword >> 8) & 0xF
         op_type = SaveRestoreRegisterOpType((first_dword >> 4) & 0xF)
         out.str = f"SaveRestoreRegister dst={dst_index} src={src_index} {OPERAND_STR.get(op_type, '?')}"
-        
+
     elif out.opcode == CheatVmOpcodeType.SaveRestoreRegisterMask:
         op_type = SaveRestoreRegisterOpType((first_dword >> 20) & 0xF)
         mask = first_dword & 0xFFFF
         out.str = f"SaveRestoreRegisterMask {OPERAND_STR.get(op_type, '?')} mask=0x{mask:04X}"
-        
+
     elif out.opcode == CheatVmOpcodeType.ReadWriteStaticRegister:
         static_idx = (first_dword >> 4) & 0xFF
         idx = first_dword & 0xF
         out.str = f"ReadWriteStaticRegister static_idx=0x{static_idx:X} idx={idx}"
-        
+
     elif out.opcode == CheatVmOpcodeType.BeginExtendedKeypressConditionalBlock:
         auto_repeat = ((first_dword >> 20) & 0xF) != 0
         key_mask, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, 8)
         out.str = f"If {'keyheld' if auto_repeat else 'keydown'} 0x{key_mask.value:X}"
-        
+
     elif out.opcode == CheatVmOpcodeType.PauseProcess:
         out.str = "PauseProcess"
-        
+
     elif out.opcode == CheatVmOpcodeType.ResumeProcess:
         out.str = "ResumeProcess"
-        
+
     elif out.opcode == CheatVmOpcodeType.DebugLog:
         log_type = DebugLogValueType((first_dword >> 20) & 0xF)
         bit_width = (first_dword >> 16) & 0xF
         value_reg_index = (first_dword >> 12) & 0xF
-        
+
         log_value_str = ""
         if log_type == DebugLogValueType.RegisterValue:
             log_value_str = f"R{value_reg_index}"
@@ -511,7 +508,6 @@ def decode_next_opcode(opcodes, index):
 
         out.str = f"DebugLog {log_value_str} W={bit_width}"
 
-
     else:
         out.str = f"Opcode {out.opcode.name} not implemented in this script."
         if instruction_ptr == index:
@@ -528,12 +524,14 @@ def disassemble_cheat(opcodes):
         if not opcode_info:
             print(f"Error: Failed to decode opcode at index {index}.", file=sys.stderr)
             break
-        
-        raw_opcodes_list = opcodes[index : index + opcode_info.size]
-        raw_opcodes_str = " ".join([f"{opc:08X}" for opc in raw_opcodes_list])
 
-        output_lines.append(f"{raw_opcodes_str:<40} {opcode_info.str}")
-        
+        if SHOW_RAW_OPCODES:
+            raw_opcodes_list = opcodes[index : index + opcode_info.size]
+            raw_opcodes_str = " ".join([f"{opc:08X}" for opc in raw_opcodes_list]).ljust(40)
+            output_lines.append(f"{raw_opcodes_str} {opcode_info.str}")
+        else:
+            output_lines.append(opcode_info.str)
+
         index += opcode_info.size
     return "\n".join(output_lines)
 
@@ -541,7 +539,7 @@ def disassemble_opcodes_from_string(opcodes_str):
     output_buffer = []
 
     preprocessed_str = _preprocess_pasted_opcodes(opcodes_str)
-    
+
     current_cheat_opcodes = []
     for line in preprocessed_str.splitlines():
         line = line.strip()
@@ -563,13 +561,13 @@ def disassemble_opcodes_from_string(opcodes_str):
 
     if current_cheat_opcodes:
         output_buffer.append(disassemble_cheat(current_cheat_opcodes))
-    
+
     return "\n".join(output_buffer)
 
 def _preprocess_pasted_opcodes(opcodes_str):
     lines = opcodes_str.splitlines()
     processed_lines = []
-    
+
     for line in lines:
         stripped_line = line.strip()
         if not stripped_line:
@@ -581,11 +579,11 @@ def _preprocess_pasted_opcodes(opcodes_str):
                 close_bracket_index = stripped_line.find(']')
             elif stripped_line.startswith('{'):
                 close_bracket_index = stripped_line.find('}')
-            
+
             if close_bracket_index != -1:
                 header = stripped_line[:close_bracket_index + 1]
                 processed_lines.append(header)
-                
+
                 remaining_opcodes_str = stripped_line[close_bracket_index + 1:].strip()
                 if remaining_opcodes_str:
                     opcode_parts = remaining_opcodes_str.split()
@@ -598,26 +596,22 @@ def _preprocess_pasted_opcodes(opcodes_str):
 
     return "\n".join(processed_lines)
 
-
 def main():
-    global TARGET_ARCH
+    global TARGET_ARCH, SHOW_RAW_OPCODES
+
+    parser = argparse.ArgumentParser(description="ARM Disassembler for Cheat VM Opcodes.")
+    parser.add_argument('--arch', type=str, default="ARM64", help="Target architecture (ARM64 or ARM32).")
+    # This is the crucial line to check:
+    parser.add_argument('--show-raw-opcodes', type=lambda x: x.lower() == 'true', default=True,
+                        help="Whether to show raw opcodes in the disassembly output (true/false).")
+    args = parser.parse_args()
+
+    TARGET_ARCH = args.arch.upper()
+    SHOW_RAW_OPCODES = args.show_raw_opcodes
 
     if not CAPSTONE_AVAILABLE:
         sys.exit(1)
 
-    for i in range(1, len(sys.argv)):
-        if sys.argv[i].lower() == "--arch" and i + 1 < len(sys.argv):
-            arch_arg = sys.argv[i+1].strip().upper()
-            if arch_arg in ["ARM32", "ARM64"]:
-                TARGET_ARCH = arch_arg
-            else:
-                print(f"Warning: Invalid architecture '{arch_arg}' provided via --arch. Defaulting to ARM64.", file=sys.stderr)
-                TARGET_ARCH = "ARM64"
-            break
-
-    if TARGET_ARCH is None:
-        TARGET_ARCH = "ARM64"
-    
     input_str = sys.stdin.read()
 
     if input_str.startswith('\ufeff'):
@@ -636,7 +630,7 @@ def main():
         if not test_disasm:
             print(f"FATAL ERROR: Capstone failed basic disassembly test for 0x{test_value:X} on {TARGET_ARCH}.", file=sys.stderr)
             return
-            
+
     except Exception as e:
         print(f"FATAL ERROR: Capstone library failed basic test with exception: {e}", file=sys.stderr)
         return

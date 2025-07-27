@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 namespace CheatToolUI
 {
@@ -46,6 +47,7 @@ namespace CheatToolUI
             {
                 radioButtonArm64.Checked = true;
             }
+            checkBoxShowRawOpcodes.Checked = currentAppSettings.ShowRawOpcodesInDisassembly;
         }
 
         private void ResolvePythonPath()
@@ -91,7 +93,6 @@ namespace CheatToolUI
             btnDisassemble.Enabled = !string.IsNullOrEmpty(resolvedPythonPath);
         }
 
-
         private async void btnAssemble_Click(object sender, EventArgs e)
         {
             textBoxOutput.Clear();
@@ -124,8 +125,9 @@ namespace CheatToolUI
 
             string inputOpcodes = textBoxInput.Text;
             string targetArch = radioButtonArm32.Checked ? "ARM32" : "ARM64";
+            bool showRawOpcodes = checkBoxShowRawOpcodes.Checked;
 
-            var result = await RunPythonScriptAsync(disassembleScriptPath, inputOpcodes, targetArch);
+            var result = await RunPythonScriptAsync(disassembleScriptPath, inputOpcodes, targetArch, showRawOpcodes);
 
             textBoxOutput.Text = result.Output;
             if (!string.IsNullOrEmpty(result.Error))
@@ -140,7 +142,7 @@ namespace CheatToolUI
             EnableUI();
         }
 
-        private async Task<(string Output, string Error)> RunPythonScriptAsync(string scriptPath, string inputData, string archArgument)
+        private async Task<(string Output, string Error)> RunPythonScriptAsync(string scriptPath, string inputData, string archArgument, bool showRawOpcodesInDisassembly = true)
         {
             StringBuilder outputBuilder = new StringBuilder();
             StringBuilder errorBuilder = new StringBuilder();
@@ -163,7 +165,16 @@ namespace CheatToolUI
                 using (Process process = new Process())
                 {
                     process.StartInfo.FileName = resolvedPythonPath;
-                    process.StartInfo.Arguments = $"-X utf8 \"{scriptPath}\" --arch {archArgument}";
+
+                    string arguments = $"-X utf8 \"{scriptPath}\" --arch {archArgument}";
+
+                    if (scriptPath == disassembleScriptPath)
+                    {
+                        string rawOpcodesValue = showRawOpcodesInDisassembly ? "true" : "false";
+                        arguments += $" --show-raw-opcodes {rawOpcodesValue}";
+                    }
+
+                    process.StartInfo.Arguments = arguments;
 
                     process.StartInfo.UseShellExecute = false;
                     process.StartInfo.RedirectStandardOutput = true;
@@ -355,6 +366,10 @@ namespace CheatToolUI
             btnCopyInput.Enabled = false;
             radioButtonArm32.Enabled = false;
             radioButtonArm64.Enabled = false;
+            checkBoxShowRawOpcodes.Enabled = false;
+            textBoxCaveBaseAddress.Enabled = false;
+            numericUpDownCaveLines.Enabled = false;
+            btnGenerateCodeCave.Enabled = false;
             this.Cursor = Cursors.WaitCursor;
         }
 
@@ -367,6 +382,7 @@ namespace CheatToolUI
                 btnDisassemble.Enabled = true;
                 radioButtonArm32.Enabled = true;
                 radioButtonArm64.Enabled = true;
+                checkBoxShowRawOpcodes.Enabled = true;
             }
             btnInstallPythonLibs.Enabled = !string.IsNullOrEmpty(resolvedPythonPath);
             btnLoadInput.Enabled = true;
@@ -375,6 +391,9 @@ namespace CheatToolUI
             btnSettings.Enabled = true;
             btnCopyOutput.Enabled = true;
             btnCopyInput.Enabled = true;
+            textBoxCaveBaseAddress.Enabled = true;
+            numericUpDownCaveLines.Enabled = true;
+            btnGenerateCodeCave.Enabled = true;
             this.Cursor = Cursors.Default;
         }
 
@@ -489,7 +508,8 @@ namespace CheatToolUI
             AppSettings tempSettings = new AppSettings
             {
                 PythonPath = currentAppSettings.PythonPath,
-                DefaultArchitecture = currentAppSettings.DefaultArchitecture
+                DefaultArchitecture = currentAppSettings.DefaultArchitecture,
+                ShowRawOpcodesInDisassembly = currentAppSettings.ShowRawOpcodesInDisassembly
             };
 
             using (SettingsForm settingsForm = new SettingsForm(tempSettings))
@@ -498,6 +518,7 @@ namespace CheatToolUI
                 {
                     currentAppSettings.PythonPath = settingsForm.CurrentSettings.PythonPath;
                     currentAppSettings.DefaultArchitecture = settingsForm.CurrentSettings.DefaultArchitecture;
+                    currentAppSettings.ShowRawOpcodesInDisassembly = settingsForm.CurrentSettings.ShowRawOpcodesInDisassembly;
                     currentAppSettings.Save();
 
                     ApplySettingsToUI();
@@ -509,6 +530,12 @@ namespace CheatToolUI
                     SetStatus("Settings not saved.");
                 }
             }
+        }
+
+        private void checkBoxShowRawOpcodes_CheckedChanged(object sender, EventArgs e)
+        {
+            currentAppSettings.ShowRawOpcodesInDisassembly = checkBoxShowRawOpcodes.Checked;
+            currentAppSettings.Save();
         }
 
         private void btnCopyOutput_Click(object sender, EventArgs e)
@@ -550,43 +577,69 @@ namespace CheatToolUI
                 SetStatus("Input text box is empty. Nothing to copy.");
             }
         }
-    }
-}
 
-public class AppSettings
-{
-    public string PythonPath { get; set; } = string.Empty;
-    public string DefaultArchitecture { get; set; } = "ARM64";
-
-    private static readonly string SettingsFilePath = "appsettings.json";
-
-    public void Save()
-    {
-        try
+        private void btnGenerateCodeCave_Click(object sender, EventArgs e)
         {
-            string jsonString = System.Text.Json.JsonSerializer.Serialize(this);
-            File.WriteAllText(SettingsFilePath, jsonString);
+            GenerateCodeCaveLayout();
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving settings: {ex.Message}");
-        }
-    }
 
-    public static AppSettings Load()
-    {
-        if (File.Exists(SettingsFilePath))
+        private void GenerateCodeCaveLayout()
         {
-            try
+            string inputLine = textBoxCaveBaseAddress.Text.Trim();
+            int numberOfLines = (int)numericUpDownCaveLines.Value;
+
+            if (string.IsNullOrWhiteSpace(inputLine))
             {
-                string jsonString = File.ReadAllText(SettingsFilePath);
-                return System.Text.Json.JsonSerializer.Deserialize<AppSettings>(jsonString) ?? new AppSettings();
+                SetStatus("Please enter a base address line for the code cave.", true);
+                return;
             }
-            catch (Exception ex)
+            if (numberOfLines <= 0)
             {
-                Console.WriteLine($"Error loading settings: {ex.Message}");
+                SetStatus("Number of lines must be greater than zero.", true);
+                return;
             }
+
+            // Use a StringBuilder for efficient string concatenation
+            StringBuilder outputBuilder = new StringBuilder();
+
+            // Regular expression to find the hexadecimal address part
+            // This regex looks for 0x followed by one or more hex characters
+            // and captures it, along with the prefix and suffix.
+            // Group 1: Prefix (e.g., [Main+R0+)
+            // Group 2: The 0xhexaddress
+            // Group 3: Suffix (e.g., =)
+            System.Text.RegularExpressions.Match match =
+                System.Text.RegularExpressions.Regex.Match(inputLine, @"^(.+)(0x[0-9a-fA-F]+)(.*)$");
+
+            if (!match.Success)
+            {
+                SetStatus("Invalid input format. Expected something like '[Main+R0+0x0004E4B640]='", true);
+                return;
+            }
+
+            string prefix = match.Groups[1].Value;
+            string hexAddressString = match.Groups[2].Value; // e.g., "0x0004E4B640"
+            string suffix = match.Groups[3].Value; // e.g., "="
+
+            // Parse the hexadecimal address
+            // Remove "0x" prefix for parsing
+            if (!long.TryParse(hexAddressString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out long baseAddress))
+            {
+                SetStatus($"Failed to parse hexadecimal address: {hexAddressString}", true);
+                return;
+            }
+
+            // Generate the lines
+            for (int i = 0; i < numberOfLines; i++)
+            {
+                long currentAddress = baseAddress + (long)(i * 4); // Increment by 4 bytes (standard instruction size)
+                string currentHexAddress = $"0x{currentAddress:X}"; // Format back to hex with "0x" and uppercase
+
+                outputBuilder.AppendLine($"{prefix}{currentHexAddress}{suffix}");
+            }
+
+            textBoxOutput.Text = outputBuilder.ToString();
+            SetStatus($"Generated {numberOfLines} code cave lines.");
         }
-        return new AppSettings();
     }
 }

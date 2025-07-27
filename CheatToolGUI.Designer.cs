@@ -45,7 +45,12 @@
             btnSettings = new Button();
             btnCopyInput = new Button();
             btnCopyOutput = new Button();
+            checkBoxShowRawOpcodes = new CheckBox();
+            textBoxCaveBaseAddress = new TextBox();
+            numericUpDownCaveLines = new NumericUpDown();
+            btnGenerateCodeCave = new Button();
             statusStrip.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDownCaveLines).BeginInit();
             SuspendLayout();
             // 
             // textBoxInput
@@ -122,7 +127,7 @@
             // statusStrip
             // 
             statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel });
-            statusStrip.Location = new Point(0, 694);
+            statusStrip.Location = new Point(0, 812);
             statusStrip.Name = "statusStrip";
             statusStrip.Size = new Size(1476, 22);
             statusStrip.TabIndex = 7;
@@ -205,11 +210,53 @@
             btnCopyOutput.UseVisualStyleBackColor = true;
             btnCopyOutput.Click += btnCopyOutput_Click;
             // 
+            // checkBoxShowRawOpcodes
+            // 
+            checkBoxShowRawOpcodes.AutoSize = true;
+            checkBoxShowRawOpcodes.Checked = true;
+            checkBoxShowRawOpcodes.CheckState = CheckState.Checked;
+            checkBoxShowRawOpcodes.Location = new Point(650, 66);
+            checkBoxShowRawOpcodes.Name = "checkBoxShowRawOpcodes";
+            checkBoxShowRawOpcodes.Size = new Size(80, 19);
+            checkBoxShowRawOpcodes.TabIndex = 15;
+            checkBoxShowRawOpcodes.Text = "Show Raw";
+            checkBoxShowRawOpcodes.UseVisualStyleBackColor = true;
+            checkBoxShowRawOpcodes.CheckedChanged += checkBoxShowRawOpcodes_CheckedChanged;
+            // 
+            // textBoxCaveBaseAddress
+            // 
+            textBoxCaveBaseAddress.Location = new Point(153, 704);
+            textBoxCaveBaseAddress.Name = "textBoxCaveBaseAddress";
+            textBoxCaveBaseAddress.Size = new Size(197, 23);
+            textBoxCaveBaseAddress.TabIndex = 16;
+            textBoxCaveBaseAddress.Text = "[Main+R0+0x00000000]= ";
+            // 
+            // numericUpDownCaveLines
+            // 
+            numericUpDownCaveLines.Location = new Point(356, 704);
+            numericUpDownCaveLines.Name = "numericUpDownCaveLines";
+            numericUpDownCaveLines.Size = new Size(62, 23);
+            numericUpDownCaveLines.TabIndex = 17;
+            // 
+            // btnGenerateCodeCave
+            // 
+            btnGenerateCodeCave.Location = new Point(16, 704);
+            btnGenerateCodeCave.Name = "btnGenerateCodeCave";
+            btnGenerateCodeCave.Size = new Size(131, 23);
+            btnGenerateCodeCave.TabIndex = 18;
+            btnGenerateCodeCave.Text = "Generate Code Cave";
+            btnGenerateCodeCave.UseVisualStyleBackColor = true;
+            btnGenerateCodeCave.Click += btnGenerateCodeCave_Click;
+            // 
             // CheatToolGUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1476, 716);
+            ClientSize = new Size(1476, 834);
+            Controls.Add(btnGenerateCodeCave);
+            Controls.Add(numericUpDownCaveLines);
+            Controls.Add(textBoxCaveBaseAddress);
+            Controls.Add(checkBoxShowRawOpcodes);
             Controls.Add(btnCopyOutput);
             Controls.Add(btnCopyInput);
             Controls.Add(btnSettings);
@@ -229,6 +276,7 @@
             Text = "Form1";
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDownCaveLines).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -251,5 +299,9 @@
         private Button btnSettings;
         private Button btnCopyInput;
         private Button btnCopyOutput;
+        private CheckBox checkBoxShowRawOpcodes;
+        private TextBox textBoxCaveBaseAddress;
+        private NumericUpDown numericUpDownCaveLines;
+        private Button btnGenerateCodeCave;
     }
 }
