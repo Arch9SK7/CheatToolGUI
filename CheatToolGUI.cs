@@ -52,7 +52,7 @@ namespace CheatToolUI
             listBoxInstructions.SelectedIndexChanged += ListBoxInstructions_SelectedIndexChanged;
 
             textBoxInput.TextChanged += TextBoxInput_TextChanged;
-            HighlightSyntax();
+            HighlightSyntax(currentAppSettings.DarkModeEnabled);
         }
 
         private void ApplySettingsToUI()
@@ -70,9 +70,9 @@ namespace CheatToolUI
 
         // --- Dark Mode Theming Logic ---
 
-        public void ApplyTheme(bool isDarkMode) 
+        public void ApplyTheme(bool isDarkMode)
         {
-            if (isApplyingTheme) return; 
+            if (isApplyingTheme) return;
             isApplyingTheme = true;
 
             this.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background;
@@ -99,7 +99,7 @@ namespace CheatToolUI
             // After applying the new theme, re-highlight syntax to ensure colors are correct
             // Temporarily detach TextChanged event to prevent re-highlighting during theme change
             textBoxInput.TextChanged -= TextBoxInput_TextChanged;
-            HighlightSyntax(); // Re-highlight based on new theme colors
+            HighlightSyntax(currentAppSettings.DarkModeEnabled); // Re-highlight based on new theme colors
             textBoxInput.TextChanged += TextBoxInput_TextChanged;
 
             isApplyingTheme = false;
@@ -885,21 +885,26 @@ namespace CheatToolUI
 
         private void TextBoxInput_TextChanged(object sender, EventArgs e)
         {
+            if (isApplyingTheme) return;
             if (isHighlighting) return;
-            HighlightSyntax();
+            HighlightSyntax(currentAppSettings.DarkModeEnabled);
         }
 
-        private void HighlightSyntax()
+        private void HighlightSyntax(bool isDarkMode)
         {
+            if (isHighlighting) return;
             isHighlighting = true;
+
             int originalSelectionStart = textBoxInput.SelectionStart;
             int originalSelectionLength = textBoxInput.SelectionLength;
 
-            // Set default text color to Black before applying specific highlights
             textBoxInput.SelectAll();
-            textBoxInput.SelectionColor = Color.Black; // Changed from Color.White
+            textBoxInput.SelectionColor = isDarkMode ? ThemeColors.Dark_TextBoxForeground : ThemeColors.Light_TextBoxForeground;
             textBoxInput.SelectionFont = new Font("Consolas", 9.75F, FontStyle.Regular);
             textBoxInput.DeselectAll();
+
+            textBoxInput.BackColor = isDarkMode ? ThemeColors.Dark_TextBoxBackground : ThemeColors.Light_TextBoxBackground;
+
 
             Regex opcodeRegex = new Regex(@"^\s*([a-zA-Z]{2,6})\b", RegexOptions.Multiline | RegexOptions.IgnoreCase);
             Regex registerRegex = new Regex(@"\b(X(?:[0-2]?[0-9]|30|ZR)|W(?:[0-2]?[0-9]|30|ZR)|LR|SP|PC|R(?:[0-9]|1[0-5]|LR|SP|PC)|CPSR|SPSR|APSR|IP)\b", RegexOptions.IgnoreCase);
@@ -918,47 +923,56 @@ namespace CheatToolUI
                 if (labelMatch.Success)
                 {
                     textBoxInput.Select(lineStart + labelMatch.Groups[1].Index, labelMatch.Groups[1].Length);
-                    textBoxInput.SelectionColor = Color.LightGreen;
+                    textBoxInput.SelectionColor = isDarkMode ? Color.LightGreen : Color.DarkGreen;
                     textBoxInput.Select(lineStart + labelMatch.Index + labelMatch.Length - 1, 1);
-                    textBoxInput.SelectionColor = Color.Silver;
+                    textBoxInput.SelectionColor = isDarkMode ? Color.LightGray : Color.Silver;
                 }
 
                 Match commentMatch = commentRegex.Match(line);
                 if (commentMatch.Success)
                 {
                     textBoxInput.Select(lineStart + commentMatch.Index, commentMatch.Length);
-                    textBoxInput.SelectionColor = Color.DarkGray;
+                    // Make Comment Color Theme Aware
+                    textBoxInput.SelectionColor = isDarkMode ? Color.DimGray : Color.DarkGray; // Example: Adjust for theme
                 }
             }
 
             foreach (Match match in opcodeRegex.Matches(textBoxInput.Text))
             {
                 textBoxInput.Select(match.Groups[1].Index, match.Groups[1].Length);
-                textBoxInput.SelectionColor = Color.Cyan;
+                // Make Opcode Color Theme Aware
+                textBoxInput.SelectionColor = isDarkMode ? ThemeColors.Dark_CheatHeader : ThemeColors.Light_CheatHeader; // Using Dark_CheatHeader (Cyan)
             }
 
             foreach (Match match in registerRegex.Matches(textBoxInput.Text))
             {
                 textBoxInput.Select(match.Index, match.Length);
-                textBoxInput.SelectionColor = Color.Orange;
+                // Make Register Color Theme Aware
+                textBoxInput.SelectionColor = isDarkMode ? Color.Orange : Color.DarkOrange; // Example: Adjust for theme
             }
 
             foreach (Match match in hexLiteralRegex.Matches(textBoxInput.Text))
             {
                 textBoxInput.Select(match.Index, match.Length);
-                textBoxInput.SelectionColor = Color.LightCoral;
+                // Make Hex Literal Color Theme Aware
+                textBoxInput.SelectionColor = isDarkMode ? Color.LightCoral : Color.DarkRed; // Example: Adjust for theme
             }
 
             foreach (Match match in decimalLiteralRegex.Matches(textBoxInput.Text))
             {
                 textBoxInput.Select(match.Index, match.Length);
-                textBoxInput.SelectionColor = Color.LightCoral;
+                // Make Decimal Literal Color Theme Aware
+                textBoxInput.SelectionColor = isDarkMode ? Color.LightCoral : Color.DarkRed; // Example: Adjust for theme
             }
 
             textBoxInput.SelectionStart = originalSelectionStart;
             textBoxInput.SelectionLength = originalSelectionLength;
-            textBoxInput.SelectionColor = textBoxInput.ForeColor; // This line might be redundant if we set default to Black
-            textBoxInput.SelectionFont = new Font("Consolas", 9.75F, FontStyle.Regular);
+
+            // This line is important to ensure newly typed text inherits the current ForeColor of the RTB
+            // and doesn't pick up the last SelectionColor.
+            textBoxInput.SelectionColor = textBoxInput.ForeColor;
+            textBoxInput.SelectionFont = new Font("Consolas", 9.75F, FontStyle.Regular); // Ensure current font is correct
+
             isHighlighting = false;
         }
 

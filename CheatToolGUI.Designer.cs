@@ -76,7 +76,7 @@
             // statusLabel
             // 
             statusLabel.Name = "statusLabel";
-            statusLabel.Size = new Size(1430, 17);
+            statusLabel.Size = new Size(1461, 17);
             statusLabel.Spring = true;
             // 
             // tabControlMain
@@ -298,6 +298,7 @@
             textBoxInput.TabIndex = 19;
             textBoxInput.Text = "";
             textBoxInput.Click += TextBoxInput_TextChanged;
+
             // 
             // tabPageInstructionRef
             // 
