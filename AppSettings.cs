@@ -13,7 +13,7 @@ namespace CheatToolUI
         public bool ShowRawOpcodesInDisassembly { get; set; } = true; // Default to true (checked)
 
         // New property for Dark Mode state
-        public bool DarkModeEnabled { get; set; } = false; // Default to false (light mode)
+        public bool DarkModeEnabled { get; set; } = true; // Default to true (Dark mode)
 
         [JsonIgnore]
         private static readonly string SettingsFileName = "settings.json";
