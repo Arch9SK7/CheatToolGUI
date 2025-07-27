@@ -12,6 +12,9 @@ namespace CheatToolUI
         // New property for the "Show Raw Opcodes" checkbox state
         public bool ShowRawOpcodesInDisassembly { get; set; } = true; // Default to true (checked)
 
+        // New property for Dark Mode state
+        public bool DarkModeEnabled { get; set; } = false; // Default to false (light mode)
+
         [JsonIgnore]
         private static readonly string SettingsFileName = "settings.json";
 
@@ -50,8 +53,6 @@ namespace CheatToolUI
                             settings.DefaultArchitecture = "ARM64";
                         }
 
-                        // Ensure ShowRawOpcodesInDisassembly is initialized if it wasn't in the file
-                        // The default value of 'true' on the property itself handles this for new loads.
 
                         return settings;
                     }

@@ -36,6 +36,7 @@
             radioArm64 = new RadioButton();
             btnCancel = new Button();
             btnOK = new Button();
+            checkBoxDarkMode = new CheckBox();
             grpDefaultArchitecture.SuspendLayout();
             SuspendLayout();
             // 
@@ -118,11 +119,24 @@
             btnOK.UseVisualStyleBackColor = true;
             btnOK.Click += btnOK_Click;
             // 
+            // checkBoxDarkMode
+            // 
+            checkBoxDarkMode.AutoSize = true;
+            checkBoxDarkMode.Checked = true;
+            checkBoxDarkMode.CheckState = CheckState.Checked;
+            checkBoxDarkMode.Location = new Point(162, 175);
+            checkBoxDarkMode.Name = "checkBoxDarkMode";
+            checkBoxDarkMode.Size = new Size(84, 19);
+            checkBoxDarkMode.TabIndex = 38;
+            checkBoxDarkMode.Text = "Dark Mode";
+            checkBoxDarkMode.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(575, 333);
+            Controls.Add(checkBoxDarkMode);
             Controls.Add(btnOK);
             Controls.Add(btnCancel);
             Controls.Add(grpDefaultArchitecture);
@@ -147,5 +161,6 @@
         private RadioButton radioArm64;
         private Button btnCancel;
         private Button btnOK;
+        private CheckBox checkBoxDarkMode;
     }
 }

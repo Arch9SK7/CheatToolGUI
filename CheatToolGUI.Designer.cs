@@ -33,7 +33,6 @@
             statusLabel = new ToolStripStatusLabel();
             tabControlMain = new TabControl();
             tabPageMain = new TabPage();
-            checkBoxAdvancedCaveMode = new CheckBox();
             btnGenerateCodeCave = new Button();
             numericUpDownCaveLines = new NumericUpDown();
             textBoxCaveBaseAddress = new TextBox();
@@ -77,7 +76,7 @@
             // statusLabel
             // 
             statusLabel.Name = "statusLabel";
-            statusLabel.Size = new Size(1461, 17);
+            statusLabel.Size = new Size(1430, 17);
             statusLabel.Spring = true;
             // 
             // tabControlMain
@@ -92,7 +91,6 @@
             // 
             // tabPageMain
             // 
-            tabPageMain.Controls.Add(checkBoxAdvancedCaveMode);
             tabPageMain.Controls.Add(btnGenerateCodeCave);
             tabPageMain.Controls.Add(numericUpDownCaveLines);
             tabPageMain.Controls.Add(textBoxCaveBaseAddress);
@@ -119,17 +117,6 @@
             tabPageMain.Text = "Assemble/Disassemble";
             tabPageMain.UseVisualStyleBackColor = true;
             tabPageMain.Click += tabPageMain_Click;
-            // 
-            // checkBoxAdvancedCaveMode
-            // 
-            checkBoxAdvancedCaveMode.AutoSize = true;
-            checkBoxAdvancedCaveMode.Enabled = false;
-            checkBoxAdvancedCaveMode.Location = new Point(646, 62);
-            checkBoxAdvancedCaveMode.Name = "checkBoxAdvancedCaveMode";
-            checkBoxAdvancedCaveMode.Size = new Size(237, 19);
-            checkBoxAdvancedCaveMode.TabIndex = 37;
-            checkBoxAdvancedCaveMode.Text = "Advanced Mode (Not Implemented Yet)";
-            checkBoxAdvancedCaveMode.UseVisualStyleBackColor = true;
             // 
             // btnGenerateCodeCave
             // 
@@ -420,6 +407,5 @@
         private Label lblInstructionDetails;
         private ListBox listBoxInstructions;
         private TextBox textBoxSearchInstruction;
-        private CheckBox checkBoxAdvancedCaveMode;
     }
 }

@@ -17,6 +17,7 @@ namespace CheatToolUI
     {
         private string pythonExecutableName = "python.exe";
         private string resolvedPythonPath = string.Empty;
+        private bool isApplyingTheme = false;
 
         private string assembleScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assemble_cheats.py");
         private string disassembleScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ARMdisassemble_cheats.py");
@@ -36,6 +37,7 @@ namespace CheatToolUI
             this.Text = $"Cheat Tool v{appVersion.Major}.{appVersion.Minor}.{appVersion.Build}";
 
             currentAppSettings = AppSettings.Load();
+            ApplyTheme(currentAppSettings.DarkModeEnabled);
             ApplySettingsToUI();
 
             SetStatus("Ready.");
@@ -64,6 +66,123 @@ namespace CheatToolUI
                 radioButtonArm64.Checked = true;
             }
             checkBoxShowRawOpcodes.Checked = currentAppSettings.ShowRawOpcodesInDisassembly;
+        }
+
+        // --- Dark Mode Theming Logic ---
+
+        public void ApplyTheme(bool isDarkMode) 
+        {
+            if (isApplyingTheme) return; 
+            isApplyingTheme = true;
+
+            this.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background;
+            this.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+
+            ApplyThemeToControls(this.Controls, isDarkMode);
+
+            if (statusStrip != null)
+            {
+                statusStrip.BackColor = isDarkMode ? ThemeColors.Dark_StatusStripBackground : ThemeColors.Light_StatusStripBackground;
+                foreach (ToolStripItem item in statusStrip.Items)
+                {
+                    item.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+                }
+            }
+
+            if (statusStrip != null)
+            {
+                statusStrip.BackColor = isDarkMode ? ThemeColors.Dark_MenuBackground : ThemeColors.Light_MenuBackground;
+                statusStrip.ForeColor = isDarkMode ? ThemeColors.Dark_MenuForeground : ThemeColors.Light_MenuForeground;
+                ApplyThemeToMenuItems(statusStrip.Items, isDarkMode);
+            }
+
+            // After applying the new theme, re-highlight syntax to ensure colors are correct
+            // Temporarily detach TextChanged event to prevent re-highlighting during theme change
+            textBoxInput.TextChanged -= TextBoxInput_TextChanged;
+            HighlightSyntax(); // Re-highlight based on new theme colors
+            textBoxInput.TextChanged += TextBoxInput_TextChanged;
+
+            isApplyingTheme = false;
+        }
+
+        private void ApplyThemeToControls(Control.ControlCollection controls, bool isDarkMode)
+        {
+            foreach (Control control in controls)
+            {
+                control.BackColor = isDarkMode ? ThemeColors.Dark_ControlBackground : ThemeColors.Light_ControlBackground;
+                control.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+
+                if (control is Button button)
+                {
+                    button.BackColor = isDarkMode ? ThemeColors.Dark_ButtonBackground : ThemeColors.Light_ButtonBackground;
+                    button.ForeColor = isDarkMode ? ThemeColors.Dark_ButtonForeground : ThemeColors.Light_ButtonForeground;
+                    button.FlatStyle = FlatStyle.Flat; // Ensures consistent look
+                    button.FlatAppearance.BorderColor = isDarkMode ? ThemeColors.Dark_InputBorder : ThemeColors.Light_InputBorder;
+                    button.FlatAppearance.BorderSize = 1;
+                }
+                else if (control is TextBox textBox)
+                {
+                    textBox.BackColor = isDarkMode ? ThemeColors.Dark_TextBoxBackground : ThemeColors.Light_TextBoxBackground;
+                    textBox.ForeColor = isDarkMode ? ThemeColors.Dark_TextBoxForeground : ThemeColors.Light_TextBoxForeground;
+                    textBox.BorderStyle = BorderStyle.FixedSingle;
+                }
+                else if (control is RichTextBox richTextBox)
+                {
+                    richTextBox.BackColor = isDarkMode ? ThemeColors.Dark_TextBoxBackground : ThemeColors.Light_TextBoxBackground;
+                    richTextBox.ForeColor = isDarkMode ? ThemeColors.Dark_TextBoxForeground : ThemeColors.Light_TextBoxForeground;
+                    richTextBox.BorderStyle = BorderStyle.FixedSingle;
+                }
+                else if (control is Label label)
+                {
+                    label.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background; // Labels often inherit parent background
+                    label.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+                }
+                else if (control is RadioButton radioButton)
+                {
+                    radioButton.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background;
+                    radioButton.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+                }
+                else if (control is CheckBox checkBox)
+                {
+                    checkBox.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background;
+                    checkBox.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+                }
+                else if (control is GroupBox groupBox)
+                {
+                    groupBox.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background;
+                    groupBox.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+                }
+                else if (control is Panel panel)
+                {
+                    panel.BackColor = isDarkMode ? ThemeColors.Dark_Background : ThemeColors.Light_Background; // Panels often just hold other controls
+                    panel.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
+                }
+                else if (control is ListBox listBox)
+                {
+                    listBox.BackColor = isDarkMode ? ThemeColors.Dark_TextBoxBackground : ThemeColors.Light_TextBoxBackground;
+                    listBox.ForeColor = isDarkMode ? ThemeColors.Dark_TextBoxForeground : ThemeColors.Light_TextBoxForeground;
+                    listBox.BorderStyle = BorderStyle.FixedSingle;
+                }
+
+                if (control.HasChildren)
+                {
+                    ApplyThemeToControls(control.Controls, isDarkMode);
+                }
+            }
+        }
+
+        private void ApplyThemeToMenuItems(ToolStripItemCollection items, bool isDarkMode)
+        {
+            foreach (ToolStripItem item in items)
+            {
+                item.BackColor = isDarkMode ? ThemeColors.Dark_MenuBackground : ThemeColors.Light_MenuBackground;
+                item.ForeColor = isDarkMode ? ThemeColors.Dark_MenuForeground : ThemeColors.Light_MenuForeground;
+
+                if (item is ToolStripMenuItem menuItem && menuItem.HasDropDownItems)
+                {
+                    ApplyThemeToMenuItems(menuItem.DropDownItems, isDarkMode);
+                }
+            }
         }
 
         private void ResolvePythonPath()
@@ -358,13 +477,31 @@ namespace CheatToolUI
         {
             if (statusStrip.InvokeRequired)
             {
-                statusStrip.Invoke(new Action(() => SetStatus(message, isError)));
+                statusStrip.Invoke(new System.Windows.Forms.MethodInvoker(() => SetStatus(message, isError)));
+                return;
+            }
+
+
+            bool isDarkMode = currentAppSettings.DarkModeEnabled;
+
+            if (isError)
+            {
+                statusLabel.ForeColor = isDarkMode ? ThemeColors.Dark_ErrorText : ThemeColors.Light_ErrorText;
+            }
+            else if (message.Contains("Warning", StringComparison.OrdinalIgnoreCase))
+            {
+                statusLabel.ForeColor = isDarkMode ? ThemeColors.Dark_WarningText : ThemeColors.Light_WarningText;
+            }
+            else if (message.Contains("complete", StringComparison.OrdinalIgnoreCase) || message.Contains("Ready", StringComparison.OrdinalIgnoreCase))
+            {
+                statusLabel.ForeColor = isDarkMode ? ThemeColors.Dark_SuccessText : ThemeColors.Light_SuccessText;
             }
             else
             {
-                statusLabel.Text = message;
-                statusLabel.ForeColor = isError ? System.Drawing.Color.Red : System.Drawing.Color.Black;
+                // Default foreground color
+                statusLabel.ForeColor = isDarkMode ? ThemeColors.Dark_Foreground : ThemeColors.Light_Foreground;
             }
+            statusLabel.Text = message;
         }
 
         private void DisableUI()
@@ -530,21 +667,15 @@ namespace CheatToolUI
 
         private void btnSettings_Click(object sender, EventArgs e)
         {
-            AppSettings tempSettings = new AppSettings
-            {
-                PythonPath = currentAppSettings.PythonPath,
-                DefaultArchitecture = currentAppSettings.DefaultArchitecture,
-                ShowRawOpcodesInDisassembly = currentAppSettings.ShowRawOpcodesInDisassembly
-            };
 
-            using (SettingsForm settingsForm = new SettingsForm(tempSettings))
+            using (SettingsForm settingsForm = new SettingsForm(currentAppSettings))
             {
                 if (settingsForm.ShowDialog() == DialogResult.OK)
                 {
-                    currentAppSettings.PythonPath = settingsForm.CurrentSettings.PythonPath;
-                    currentAppSettings.DefaultArchitecture = settingsForm.CurrentSettings.DefaultArchitecture;
-                    currentAppSettings.ShowRawOpcodesInDisassembly = settingsForm.CurrentSettings.ShowRawOpcodesInDisassembly;
-                    currentAppSettings.Save();
+
+                    currentAppSettings.Save(); // Save the updated settings to file
+
+                    ApplyTheme(currentAppSettings.DarkModeEnabled);
 
                     ApplySettingsToUI();
                     ResolvePythonPath();
@@ -552,7 +683,11 @@ namespace CheatToolUI
                 }
                 else
                 {
-                    SetStatus("Settings not saved.");
+                    currentAppSettings = AppSettings.Load();
+                    ApplyTheme(currentAppSettings.DarkModeEnabled);
+                    ApplySettingsToUI();
+                    ResolvePythonPath();
+                    SetStatus("Settings not saved (reverted to previous settings).");
                 }
             }
         }
