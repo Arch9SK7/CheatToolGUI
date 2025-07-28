@@ -6,7 +6,7 @@
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [How to Use (Assembly/Disassembly)](#how-to-use-assembly/disassembly)
+- [How to Use (Assembly/Disassembly)](#how-to-use-assembly-disassembly)
 - [How to Use (Nintendo Switch Injection)](#how-to-use-nintendo-switch-injection)
 - [Settings](#settings)
 - [File Operations](#file-operations)
