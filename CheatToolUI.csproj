@@ -8,9 +8,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>output.ico</ApplicationIcon>
-    <BuildCounter>1</BuildCounter>
+    <BuildCounter>0</BuildCounter>
     <Revision>*</Revision>
-    <MajorMinorVersion>1.2</MajorMinorVersion>
+    <MajorMinorVersion>1.3</MajorMinorVersion>
     <Version>$(MajorMinorVersion).$(BuildCounter)</Version>
     <FileVersion>$(MajorMinorVersion).$(BuildCounter)</FileVersion>
     <Product>CheatTool By Arch9SK7</Product>
