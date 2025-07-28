@@ -110,17 +110,17 @@ MATH_STR = {
     RegisterArithmeticType.Addition: "+",
     RegisterArithmeticType.Subtraction: "-",
     RegisterArithmeticType.Multiplication: "*",
-    RegisterArithmeticType.LeftShift: "<<",
-    RegisterArithmeticType.RightShift: ">>",
-    RegisterArithmeticType.LogicalAnd: "&",
-    RegisterArithmeticType.LogicalOr: "|",
-    RegisterArithmeticType.LogicalNot: "!",
-    RegisterArithmeticType.LogicalXor: "^",
-    RegisterArithmeticType.None_: "",
-    RegisterArithmeticType.FloatAddition: "+f",
-    RegisterArithmeticType.FloatMultiplication: "*f",
-    RegisterArithmeticType.DoubleAddition: "+d",
-    RegisterArithmeticType.DoubleMultiplication: "*d",
+    RegisterArithmeticType.LeftShift: "lsl",
+    RegisterArithmeticType.RightShift: "lsr",
+    RegisterArithmeticType.LogicalAnd: "and",
+    RegisterArithmeticType.LogicalOr: "or",
+    RegisterArithmeticType.LogicalNot: "not",
+    RegisterArithmeticType.LogicalXor: "xor",
+    RegisterArithmeticType.None_: "mov",
+    RegisterArithmeticType.FloatAddition: "fadd",
+    RegisterArithmeticType.FloatMultiplication: "fmul",
+    RegisterArithmeticType.DoubleAddition: "fadd",
+    RegisterArithmeticType.DoubleMultiplication: "fmul",
 }
 
 OPERAND_STR = {
@@ -278,21 +278,31 @@ def decode_next_opcode(opcodes, index):
                 if combined_asm:
                     out.str += f"{'; '.join(combined_asm)}"
                 else:
-                    out.str += "No disassembly"
+                    out.str += f"0x{value.value:016X}"
 
             elif bit_width == 4:
                 if TARGET_ARCH == "ARM64":
                     asm = arm64_disassemble(value.value, rel_address)
                     if asm:
                         out.str += f"{asm}"
+                    else:
+                        out.str += f"0x{value.value:08X}"
                 elif TARGET_ARCH == "ARM32":
                     asm = arm32_disassemble(value.value, rel_address)
                     if asm:
                         out.str += f"{asm}"
+                    else:
+                        out.str += f"0x{value.value:08X}"
                 else:
-                    out.str += "Disassembly type not determined"
+                    out.str += f"0x{value.value:08X} (Disassembly type not determined)"
+            elif bit_width == 2:
+                out.str += f"0x{value.value:04X}"
+            elif bit_width == 1:
+                out.str += f"0x{value.value:02X}"
+            else:
+                out.str += f"0x{value.value:X}"
         else:
-            out.str += "Disassembly skipped - Capstone not available"
+            out.str += f"0x{value.value:X} (Disassembly skipped - Capstone not available)"
 
     elif out.opcode == CheatVmOpcodeType.BeginConditionalBlock:
         bit_width = (first_dword >> 24) & 0xF
@@ -329,29 +339,32 @@ def decode_next_opcode(opcodes, index):
     elif out.opcode == CheatVmOpcodeType.LoadRegisterMemory:
         bit_width = (first_dword >> 24) & 0xF
         mem_type = MemoryAccessType((first_dword >> 20) & 0xF)
-        reg_index = (first_dword >> 16) & 0xF
-        load_from_reg_type = (first_dword >> 12) & 0xF
-        offset_register = (first_dword >> 8) & 0xF
+        reg_index = (first_dword >> 16) & 0xF # Destination register
+        load_from_reg_type = (first_dword >> 12) & 0xF # This is the key field
+        offset_register_val = (first_dword >> 8) & 0xF # This is the "R" in bR# if type is 1
         second_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
 
         rel_address_high_8 = first_dword & 0xFF
         rel_address = (rel_address_high_8 << 32) | second_dword
 
-        if load_from_reg_type == 3:
-            out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+R{offset_register}+0x{rel_address:010X}] W={bit_width}"
-        elif load_from_reg_type == 1:
+        # Adjust parsing for bR# syntax based on assembler behavior
+        if load_from_reg_type == 3: # MemType + R_base + immediate (original type 3)
+            out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+R{offset_register_val}+0x{rel_address:010X}] W={bit_width}"
+        elif load_from_reg_type == 1 and mem_type == MemoryAccessType.MainNso: # bR# + immediate (new bR# handling)
+            out.str = f"R{reg_index} = [bR{offset_register_val}+0x{rel_address:010X}] W={bit_width}"
+        elif load_from_reg_type == 1: # R_base + immediate (original type 1, R[reg_index] + offset)
             out.str = f"R{reg_index} = [R{reg_index}+0x{rel_address:010X}] W={bit_width}"
-        elif load_from_reg_type == 2:
-            out.str = f"R{reg_index} = [R{offset_register}+0x{rel_address:010X}] W={bit_width}"
-        else:
+        elif load_from_reg_type == 2: # R_base + immediate (original type 2, R[offset_register_val] + offset)
+            out.str = f"R{reg_index} = [R{offset_register_val}+0x{rel_address:010X}] W={bit_width}"
+        else: # MemType + immediate (original type 0)
             out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+0x{rel_address:010X}] W={bit_width}"
 
     elif out.opcode == CheatVmOpcodeType.StoreStaticToAddress:
         bit_width = (first_dword >> 24) & 0xF
         reg_index = (first_dword >> 16) & 0xF
         increment_reg = ((first_dword >> 12) & 0xF) != 0
-        add_offset_reg = ((first_dword >> 8) & 0xF) != 0
-        offset_reg_index = (first_dword >> 4) & 0xF
+        add_offset_reg = ((first_dword >> 20) & 0xF) == 2 # Check for '2' for R+R offset
+        offset_reg_index = (first_dword >> 8) & 0xF
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, 8)
 
         if add_offset_reg:
@@ -365,6 +378,7 @@ def decode_next_opcode(opcodes, index):
         bit_width = (first_dword >> 24) & 0xF
         reg_index = (first_dword >> 16) & 0xF
         math_type = RegisterArithmeticType((first_dword >> 12) & 0xF)
+        # Fix: Revert to reading a single DWORD for the static value
         value, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
         out.str = f"R{reg_index} = R{reg_index} {MATH_STR.get(math_type, '?')} 0x{value:X} W={bit_width}"
 
@@ -377,10 +391,11 @@ def decode_next_opcode(opcodes, index):
         math_type = RegisterArithmeticType((first_dword >> 20) & 0xF)
         dst_reg_index = (first_dword >> 16) & 0xF
         src_reg_1_index = (first_dword >> 12) & 0xF
-        has_immediate = ((first_dword >> 8) & 0xF) != 0
+        has_immediate = ((first_dword >> 8) & 0xF) == 1 # Check bit 8 being 1 for immediate
+
         if has_immediate:
             value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
-            out.str = f"R{dst_reg_index} = R{src_reg_1_index} {MATH_STR.get(math_type, '?')} 0x{value.value:X} W={bit_width}"
+            out.str = f"R{dst_reg_index} = R{src_reg_1_index} {MATH_STR.get(math_type, '?')} i0x{value.value:X} W={bit_width}"
         else:
             src_reg_2_index = (first_dword >> 4) & 0xF
             out.str = f"R{dst_reg_index} = R{src_reg_1_index} {MATH_STR.get(math_type, '?')} R{src_reg_2_index} W={bit_width}"
@@ -426,7 +441,7 @@ def decode_next_opcode(opcodes, index):
         comp_str = ""
         if comp_type == CompareRegisterValueType.StaticValue:
             value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
-            comp_str = f"0x{value.value:X}"
+            comp_str = f"i0x{value.value:X}"
         elif comp_type == CompareRegisterValueType.OtherRegister:
             other_reg_index = (first_dword >> 4) & 0xF
             comp_str = f"R{other_reg_index}"
@@ -601,9 +616,8 @@ def main():
 
     parser = argparse.ArgumentParser(description="ARM Disassembler for Cheat VM Opcodes.")
     parser.add_argument('--arch', type=str, default="ARM64", help="Target architecture (ARM64 or ARM32).")
-    # This is the crucial line to check:
     parser.add_argument('--show-raw-opcodes', type=lambda x: x.lower() == 'true', default=True,
-                        help="Whether to show raw opcodes in the disassembly output (true/false).")
+                                 help="Whether to show raw opcodes in the disassembly output (true/false).")
     args = parser.parse_args()
 
     TARGET_ARCH = args.arch.upper()

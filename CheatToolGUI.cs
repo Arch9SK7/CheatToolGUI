@@ -10,6 +10,10 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Net.Http;
+using System.Net.Sockets;
+using CheatToolUI;
+
 
 namespace CheatToolUI
 {
@@ -26,8 +30,19 @@ namespace CheatToolUI
 
         private List<Instruction> allInstructions;
         private const string InstructionDataFileName = "InstructionData.json";
+        private List<VMOpcode> allVMOpcodes;
+        private const string VMOpcodeDataFileName = "vm_opcodes.json";
 
         private bool isHighlighting = false;
+
+        public class VMOpcode
+        {
+            public string Name { get; set; }
+            public string OpcodeValue { get; set; }
+            public List<string> Architectures { get; set; }
+            public List<string> Syntax { get; set; }
+            public string Description { get; set; }
+        }
 
         public CheatToolGUI()
         {
@@ -45,11 +60,14 @@ namespace CheatToolUI
 
             textBoxOutput.Font = new Font("Consolas", 9.75F, FontStyle.Regular);
             textBoxInput.Font = new Font("Consolas", 9.75F, FontStyle.Regular);
+            richTextBoxOpDescription.Font = new Font("Consolas", 9.75F, FontStyle.Regular);
 
             LoadInstructions();
+            LoadVMOpcodes();
 
             textBoxSearchInstruction.TextChanged += TextBoxSearchInstruction_TextChanged;
             listBoxInstructions.SelectedIndexChanged += ListBoxInstructions_SelectedIndexChanged;
+            listBoxVmOpcodes.SelectedIndexChanged += ListBoxVmOpcodes_SelectedIndexChanged;
 
             textBoxInput.TextChanged += TextBoxInput_TextChanged;
             HighlightSyntax(currentAppSettings.DarkModeEnabled);
@@ -527,6 +545,9 @@ namespace CheatToolUI
             listBoxInstructions.Enabled = false;
             richTextBoxInstructionDetails.Enabled = false;
 
+            listBoxVmOpcodes.Enabled = false;
+            richTextBoxOpDescription.Enabled = false;
+
             this.Cursor = Cursors.WaitCursor;
         }
 
@@ -555,6 +576,9 @@ namespace CheatToolUI
             textBoxSearchInstruction.Enabled = true;
             listBoxInstructions.Enabled = true;
             richTextBoxInstructionDetails.Enabled = true;
+
+            listBoxVmOpcodes.Enabled = true;
+            richTextBoxOpDescription.Enabled = true;
 
             this.Cursor = Cursors.Default;
         }
@@ -792,6 +816,97 @@ namespace CheatToolUI
             SetStatus($"Generated {numberOfLines} code cave lines.");
         }
 
+        private void LoadVMOpcodes()
+        {
+            string vmOpcodeFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, VMOpcodeDataFileName);
+            if (File.Exists(vmOpcodeFilePath))
+            {
+                try
+                {
+                    string jsonString = File.ReadAllText(vmOpcodeFilePath);
+                    allVMOpcodes = JsonSerializer.Deserialize<List<VMOpcode>>(jsonString);
+                    SetStatus("VM Opcode reference data loaded.");
+                    PopulateVMOpcodeListBox(allVMOpcodes);
+                }
+                catch (Exception ex)
+                {
+                    allVMOpcodes = new List<VMOpcode>();
+                    SetStatus($"ERROR loading VM opcode data: {ex.Message}", true);
+                    MessageBox.Show($"Could not load VM opcode data from '{VMOpcodeDataFileName}'. Please ensure it's a valid JSON file. Error: {ex.Message}", "VM Opcode Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                allVMOpcodes = new List<VMOpcode>();
+                SetStatus($"WARNING: VM opcode data file '{VMOpcodeDataFileName}' not found.", true);
+                MessageBox.Show($"VM opcode data file '{VMOpcodeDataFileName}' not found. The VM opcode reference feature will not be available.", "VM Opcode Data Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void PopulateVMOpcodeListBox(List<VMOpcode> vmOpcodesToDisplay)
+        {
+            listBoxVmOpcodes.DataSource = null; // Clear existing data source
+            if (vmOpcodesToDisplay != null)
+            {
+                listBoxVmOpcodes.DisplayMember = "Name";
+                listBoxVmOpcodes.ValueMember = "Name"; // Display "Name", use "Name" as value
+                listBoxVmOpcodes.DataSource = vmOpcodesToDisplay.OrderBy(o => o.Name).ToList();
+            }
+        }
+
+        private void ListBoxVmOpcodes_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Clear the ARM instruction details when a VM opcode is selected
+            richTextBoxInstructionDetails.Clear();
+            // Ensure the Opcode description box is also cleared if nothing is selected
+            richTextBoxOpDescription.Clear();
+
+            if (listBoxVmOpcodes.SelectedItem is VMOpcode selectedVMOpcode)
+            {
+                richTextBoxOpDescription.SelectAll();
+                richTextBoxOpDescription.SelectionColor = richTextBoxOpDescription.ForeColor;
+                richTextBoxOpDescription.SelectionFont = richTextBoxOpDescription.Font;
+                richTextBoxOpDescription.Clear();
+
+                // Display Name and OpcodeValue (bold)
+                richTextBoxOpDescription.SelectionFont = new Font(richTextBoxOpDescription.Font, FontStyle.Bold);
+                richTextBoxOpDescription.AppendText($"{selectedVMOpcode.Name} (Opcode: {selectedVMOpcode.OpcodeValue})\n\n");
+
+                // Display Architectures
+                richTextBoxOpDescription.SelectionFont = new Font(richTextBoxOpDescription.Font, FontStyle.Regular);
+                richTextBoxOpDescription.AppendText("Architectures: ");
+                richTextBoxOpDescription.SelectionFont = new Font(richTextBoxOpDescription.Font, FontStyle.Bold);
+                richTextBoxOpDescription.AppendText(string.Join(", ", selectedVMOpcode.Architectures));
+                richTextBoxOpDescription.AppendText("\n\n");
+
+                // Display Syntax
+                richTextBoxOpDescription.SelectionFont = new Font(richTextBoxOpDescription.Font, FontStyle.Regular);
+                richTextBoxOpDescription.AppendText("Syntax:\n");
+                foreach (string syntaxLine in selectedVMOpcode.Syntax)
+                {
+                    richTextBoxOpDescription.SelectionFont = new Font("Consolas", richTextBoxOpDescription.Font.Size, FontStyle.Italic);
+                    richTextBoxOpDescription.AppendText($"  {syntaxLine}\n");
+                }
+                richTextBoxOpDescription.AppendText("\n");
+
+                // Display Description
+                richTextBoxOpDescription.SelectionFont = new Font(richTextBoxOpDescription.Font, FontStyle.Regular);
+                richTextBoxOpDescription.AppendText("Description:\n");
+                richTextBoxOpDescription.AppendText(selectedVMOpcode.Description);
+
+                // Reset font and color for future appended text
+                richTextBoxOpDescription.SelectionFont = richTextBoxOpDescription.Font;
+                richTextBoxOpDescription.SelectionColor = richTextBoxOpDescription.ForeColor;
+
+                // Optionally, deselect the ARM instruction listbox if an VM opcode is selected
+                listBoxInstructions.ClearSelected();
+            }
+            else
+            {
+                richTextBoxOpDescription.Clear();
+            }
+        }
+
         private void LoadInstructions()
         {
             string instructionFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, InstructionDataFileName);
@@ -848,6 +963,8 @@ namespace CheatToolUI
 
         private void ListBoxInstructions_SelectedIndexChanged(object sender, EventArgs e)
         {
+            richTextBoxOpDescription.Clear();
+
             if (listBoxInstructions.SelectedItem is Instruction selectedInstruction)
             {
                 richTextBoxInstructionDetails.SelectAll();
@@ -881,6 +998,7 @@ namespace CheatToolUI
             {
                 richTextBoxInstructionDetails.Clear();
             }
+            listBoxVmOpcodes.ClearSelected();
         }
 
         private void TextBoxInput_TextChanged(object sender, EventArgs e)
@@ -984,6 +1102,34 @@ namespace CheatToolUI
         private void tabPageInstructionRef_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void btnSwitchInjection_Click(object sender, EventArgs e)
+        {
+            // Create a new instance of the SwitchInjection form
+            SwitchInjection switchForm = new SwitchInjection();
+
+            // Show the form
+            // Option 1: ShowDialog() - Opens modally. User must close SwitchInjection before interacting with CheatToolGUI.
+            // switchForm.ShowDialog();
+
+            // Option 2: Show() - Opens non-modally. User can interact with both forms simultaneously.
+            switchForm.Show();
+
+            // Optional: If I want to prevent multiple instances of SwitchInjection,
+            // I could store a reference to the form and only create it once.
+            // Example (add private SwitchInjection _switchForm; to class):
+            /*
+            if (_switchForm == null || _switchForm.IsDisposed)
+            {
+                _switchForm = new SwitchInjection();
+                _switchForm.Show();
+            }
+            else
+            {
+                _switchForm.Activate(); // Bring it to the front if it's already open
+            }
+            */
         }
     }
 }

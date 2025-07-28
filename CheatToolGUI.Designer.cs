@@ -52,16 +52,23 @@
             textBoxOutput = new RichTextBox();
             textBoxInput = new RichTextBox();
             tabPageInstructionRef = new TabPage();
+            lblVMOpCodes = new Label();
+            richTextBoxOpDescription = new RichTextBox();
+            listBoxVmOpcodes = new ListBox();
             richTextBoxInstructionDetails = new RichTextBox();
             lblInstructionDetails = new Label();
             listBoxInstructions = new ListBox();
             textBoxSearchInstruction = new TextBox();
             lblSearchInstruction = new Label();
+            tabPageMemoryInjection = new TabPage();
+            btnSwitchInjection = new Button();
+            lblTestWarning = new Label();
             statusStrip.SuspendLayout();
             tabControlMain.SuspendLayout();
             tabPageMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numericUpDownCaveLines).BeginInit();
             tabPageInstructionRef.SuspendLayout();
+            tabPageMemoryInjection.SuspendLayout();
             SuspendLayout();
             // 
             // statusStrip
@@ -83,6 +90,7 @@
             // 
             tabControlMain.Controls.Add(tabPageMain);
             tabControlMain.Controls.Add(tabPageInstructionRef);
+            tabControlMain.Controls.Add(tabPageMemoryInjection);
             tabControlMain.Location = new Point(0, 1);
             tabControlMain.Name = "tabControlMain";
             tabControlMain.SelectedIndex = 0;
@@ -298,10 +306,12 @@
             textBoxInput.TabIndex = 19;
             textBoxInput.Text = "";
             textBoxInput.Click += TextBoxInput_TextChanged;
-
             // 
             // tabPageInstructionRef
             // 
+            tabPageInstructionRef.Controls.Add(lblVMOpCodes);
+            tabPageInstructionRef.Controls.Add(richTextBoxOpDescription);
+            tabPageInstructionRef.Controls.Add(listBoxVmOpcodes);
             tabPageInstructionRef.Controls.Add(richTextBoxInstructionDetails);
             tabPageInstructionRef.Controls.Add(lblInstructionDetails);
             tabPageInstructionRef.Controls.Add(listBoxInstructions);
@@ -316,19 +326,45 @@
             tabPageInstructionRef.UseVisualStyleBackColor = true;
             tabPageInstructionRef.Click += tabPageInstructionRef_Click;
             // 
+            // lblVMOpCodes
+            // 
+            lblVMOpCodes.AutoSize = true;
+            lblVMOpCodes.Location = new Point(1008, 84);
+            lblVMOpCodes.Name = "lblVMOpCodes";
+            lblVMOpCodes.Size = new Size(122, 15);
+            lblVMOpCodes.TabIndex = 7;
+            lblVMOpCodes.Text = "VM Op Codes/Syntax:";
+            // 
+            // richTextBoxOpDescription
+            // 
+            richTextBoxOpDescription.Location = new Point(868, 105);
+            richTextBoxOpDescription.Name = "richTextBoxOpDescription";
+            richTextBoxOpDescription.ReadOnly = true;
+            richTextBoxOpDescription.Size = new Size(393, 454);
+            richTextBoxOpDescription.TabIndex = 6;
+            richTextBoxOpDescription.Text = "";
+            // 
+            // listBoxVmOpcodes
+            // 
+            listBoxVmOpcodes.FormattingEnabled = true;
+            listBoxVmOpcodes.Location = new Point(737, 105);
+            listBoxVmOpcodes.Name = "listBoxVmOpcodes";
+            listBoxVmOpcodes.Size = new Size(125, 454);
+            listBoxVmOpcodes.TabIndex = 5;
+            // 
             // richTextBoxInstructionDetails
             // 
-            richTextBoxInstructionDetails.Location = new Point(485, 105);
+            richTextBoxInstructionDetails.Location = new Point(251, 105);
             richTextBoxInstructionDetails.Name = "richTextBoxInstructionDetails";
             richTextBoxInstructionDetails.ReadOnly = true;
-            richTextBoxInstructionDetails.Size = new Size(413, 454);
+            richTextBoxInstructionDetails.Size = new Size(478, 454);
             richTextBoxInstructionDetails.TabIndex = 4;
             richTextBoxInstructionDetails.Text = "";
             // 
             // lblInstructionDetails
             // 
             lblInstructionDetails.AutoSize = true;
-            lblInstructionDetails.Location = new Point(671, 86);
+            lblInstructionDetails.Location = new Point(461, 86);
             lblInstructionDetails.Name = "lblInstructionDetails";
             lblInstructionDetails.Size = new Size(45, 15);
             lblInstructionDetails.TabIndex = 3;
@@ -337,9 +373,9 @@
             // listBoxInstructions
             // 
             listBoxInstructions.FormattingEnabled = true;
-            listBoxInstructions.Location = new Point(114, 105);
+            listBoxInstructions.Location = new Point(112, 105);
             listBoxInstructions.Name = "listBoxInstructions";
-            listBoxInstructions.Size = new Size(365, 454);
+            listBoxInstructions.Size = new Size(131, 454);
             listBoxInstructions.TabIndex = 2;
             // 
             // textBoxSearchInstruction
@@ -358,6 +394,36 @@
             lblSearchInstruction.TabIndex = 0;
             lblSearchInstruction.Text = "Search Instruction:";
             // 
+            // tabPageMemoryInjection
+            // 
+            tabPageMemoryInjection.Controls.Add(btnSwitchInjection);
+            tabPageMemoryInjection.Controls.Add(lblTestWarning);
+            tabPageMemoryInjection.Location = new Point(4, 24);
+            tabPageMemoryInjection.Name = "tabPageMemoryInjection";
+            tabPageMemoryInjection.Size = new Size(1468, 780);
+            tabPageMemoryInjection.TabIndex = 2;
+            tabPageMemoryInjection.Text = "Switch Mem Injection";
+            tabPageMemoryInjection.UseVisualStyleBackColor = true;
+            // 
+            // btnSwitchInjection
+            // 
+            btnSwitchInjection.Location = new Point(591, 166);
+            btnSwitchInjection.Name = "btnSwitchInjection";
+            btnSwitchInjection.Size = new Size(152, 81);
+            btnSwitchInjection.TabIndex = 1;
+            btnSwitchInjection.Text = "Switch Injection";
+            btnSwitchInjection.UseVisualStyleBackColor = true;
+            btnSwitchInjection.Click += btnSwitchInjection_Click;
+            // 
+            // lblTestWarning
+            // 
+            lblTestWarning.AutoSize = true;
+            lblTestWarning.Location = new Point(499, 130);
+            lblTestWarning.Name = "lblTestWarning";
+            lblTestWarning.Size = new Size(352, 15);
+            lblTestWarning.TabIndex = 0;
+            lblTestWarning.Text = "THIS IS FOR TESTING. YOU NEED SYSBOTBASE ON YOUR SWITCH";
+            // 
             // CheatToolGUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -375,6 +441,8 @@
             ((System.ComponentModel.ISupportInitialize)numericUpDownCaveLines).EndInit();
             tabPageInstructionRef.ResumeLayout(false);
             tabPageInstructionRef.PerformLayout();
+            tabPageMemoryInjection.ResumeLayout(false);
+            tabPageMemoryInjection.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -408,5 +476,11 @@
         private Label lblInstructionDetails;
         private ListBox listBoxInstructions;
         private TextBox textBoxSearchInstruction;
+        private TabPage tabPageMemoryInjection;
+        private RichTextBox richTextBoxOpDescription;
+        private ListBox listBoxVmOpcodes;
+        private Label lblVMOpCodes;
+        private Button btnSwitchInjection;
+        private Label lblTestWarning;
     }
 }
