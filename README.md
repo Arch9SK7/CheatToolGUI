@@ -153,8 +153,8 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 - **Python scripts** by [Tomvita]
 
-https://github.com/user-attachments/assets/f7baed7a-ee2b-41e1-8d41-acceb038cdb0" />
-https://github.com/user-attachments/assets/0487c97f-def3-4c57-87f5-8c2fb15c0edd" />
+<img width="1475" height="743" alt="Screenshot 2025-07-26 143316" src="https://github.com/user-attachments/assets/f7baed7a-ee2b-41e1-8d41-acceb038cdb0" />
+<img width="1472" height="740" alt="Screenshot 2025-07-26 143125" src="https://github.com/user-attachments/assets/0487c97f-def3-4c57-87f5-8c2fb15c0edd" />
 <img width="1472" height="860" alt="Screenshot 2025-07-27 223852" src="https://github.com/user-attachments/assets/f5ba8895-9006-4ce0-bcbc-ea438aba1c75" />
 <img width="1473" height="835" alt="Screenshot 2025-07-27 223754" src="https://github.com/user-attachments/assets/8ff07f3f-91d3-464b-95ed-409c9774c042" />
 <img width="1474" height="835" alt="Screenshot 2025-07-27 222911" src="https://github.com/user-attachments/assets/17aa1707-dd92-4412-8f0c-8225a32b79fc" />
