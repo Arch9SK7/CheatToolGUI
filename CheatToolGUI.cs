@@ -25,6 +25,7 @@ namespace CheatToolUI
 
         private string assembleScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assemble_cheats.py");
         private string disassembleScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ARMdisassemble_cheats.py");
+        private string relocateScriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "relocator.py");
 
         private AppSettings currentAppSettings;
 
@@ -245,6 +246,74 @@ namespace CheatToolUI
             btnAssemble.Enabled = !string.IsNullOrEmpty(resolvedPythonPath);
             btnDisassemble.Enabled = !string.IsNullOrEmpty(resolvedPythonPath);
         }
+
+        private async void btnRelocate_Click(object sender, EventArgs e)
+        {
+            // Clear previous output
+            textBoxOutput.Text = "";
+            SetStatus("Relocating code...");
+
+            // Get input from text boxes
+            string inputCode = textBoxInput.Text;
+
+            if (string.IsNullOrWhiteSpace(inputCode))
+            {
+                SetStatus("Error: Input code cannot be empty.");
+                MessageBox.Show("Please enter code in the Input box.", "Input Missing", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // Set up the ProcessStartInfo for running Python
+                ProcessStartInfo start = new ProcessStartInfo
+                {
+                    FileName = resolvedPythonPath, // Use the resolved path to python.exe
+                    Arguments = $"\"{relocateScriptPath}\" relocate", // Pass only the "relocate" command
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true, // Capture output
+                    RedirectStandardError = true,  // Capture errors
+                    RedirectStandardInput = true,  // Send input to Python script
+                    CreateNoWindow = true          // Don't show a console window
+                };
+
+                using (Process process = Process.Start(start))
+                {
+                    if (process == null)
+                    {
+                        SetStatus("Error: Failed to start Python process.");
+                        MessageBox.Show("Could not start Python process. Check your Python installation.", "Process Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    // Read the output and error streams asynchronously to prevent deadlocks
+                    string output = await process.StandardOutput.ReadToEndAsync();
+                    string error = await process.StandardError.ReadToEndAsync();
+
+                    process.WaitForExit(); // Wait for the Python script to finish
+
+                    if (process.ExitCode == 0)
+                    {
+                        textBoxOutput.Text = output.Trim(); // Display the relocated code
+                        SetStatus("Relocation successful.");
+                    }
+                    else
+                    {
+                        // Display Python script errors
+                        SetStatus($"Relocation failed. Error: {error.Trim()}");
+                        MessageBox.Show($"Python script error:\n{error.Trim()}", "Relocation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Debug.WriteLine($"Python relocation script error:\n{error.Trim()}"); // Log to debug output
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"An unexpected error occurred: {ex.Message}");
+                MessageBox.Show($"An error occurred during relocation:\n{ex.Message}", "Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Debug.WriteLine($"Relocation exception: {ex}"); // Log full exception
+            }
+        }
+
 
         private async void btnAssemble_Click(object sender, EventArgs e)
         {
@@ -1004,8 +1073,8 @@ namespace CheatToolUI
         private void TextBoxInput_TextChanged(object sender, EventArgs e)
         {
             if (isApplyingTheme) return;
-            if (isHighlighting) return;
-            HighlightSyntax(currentAppSettings.DarkModeEnabled);
+            // if (isHighlighting) return;
+            // HighlightSyntax(currentAppSettings.DarkModeEnabled);
         }
 
         private void HighlightSyntax(bool isDarkMode)

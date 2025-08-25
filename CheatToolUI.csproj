@@ -29,7 +29,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="InstructionData.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="relocator.py">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="vm_opcodes.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

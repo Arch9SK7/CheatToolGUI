@@ -1,6 +1,7 @@
 import sys
 import argparse
 from enum import Enum
+import struct
 
 try:
     from capstone import Cs, CS_ARCH_ARM64, CS_ARCH_ARM, CS_MODE_ARM, CS_MODE_THUMB, CS_OPT_DETAIL
@@ -188,7 +189,6 @@ def arm64_disassemble(value, address):
             disassembled.append(f"{i.mnemonic} {i.op_str}")
         return "; ".join(disassembled).strip()
     except Exception as e:
-        print(f"Error during ARM64 disassembly: {e}", file=sys.stderr)
         return ""
 
 def arm32_disassemble(value, address):
@@ -256,26 +256,22 @@ def decode_next_opcode(opcodes, index):
 
         if CAPSTONE_AVAILABLE:
             if bit_width == 8:
-                high_32_bits = (value.value >> 32) & 0xFFFFFFFF
                 low_32_bits = value.value & 0xFFFFFFFF
+                high_32_bits = (value.value >> 32) & 0xFFFFFFFF
 
-                combined_asm = []
-                if TARGET_ARCH == "ARM64":
+                try:
                     asm_low = arm64_disassemble(low_32_bits, rel_address)
                     asm_high = arm64_disassemble(high_32_bits, rel_address + 4)
-                elif TARGET_ARCH == "ARM32":
-                    asm_low = arm32_disassemble(low_32_bits, rel_address)
-                    asm_high = arm32_disassemble(high_32_bits, rel_address + 4)
-                else:
-                    asm_low = ""
-                    asm_high = ""
+                    is_valid_instruction = bool(asm_low and asm_high and "udf" not in asm_low and "udf" not in asm_high)
+                except Exception:
+                    is_valid_instruction = False
 
-                if asm_low:
-                    combined_asm.append(f"{asm_low}")
-                if asm_high:
-                    combined_asm.append(f"{asm_high}")
-
-                if combined_asm:
+                if is_valid_instruction:
+                    combined_asm = []
+                    if asm_low:
+                        combined_asm.append(f"{asm_low}")
+                    if asm_high:
+                        combined_asm.append(f"{asm_high}")
                     out.str += f"{'; '.join(combined_asm)}"
                 else:
                     out.str += f"0x{value.value:016X}"
@@ -313,14 +309,21 @@ def decode_next_opcode(opcodes, index):
         second_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
         rel_address_high_8 = first_dword & 0xFF
         rel_address = (rel_address_high_8 << 32) | second_dword
-
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
         ofs_reg_str = f"R{ofs_reg_index}+" if include_ofs_reg else ""
         out.str = f"If [{mem_type_str(mem_type)}+{ofs_reg_str}0x{rel_address:010X}] {CONDITION_STR.get(cond_type, '?')} 0x{value.value:X}"
 
     elif out.opcode == CheatVmOpcodeType.EndConditionalBlock:
-        end_type = (first_dword >> 24) & 0xF
-        out.str = "Else" if end_type == 1 else "Endif"
+        end_type_high = (first_dword >> 24) & 0xF
+        end_type_low = first_dword & 0xF
+        if end_type_high == 1:
+            out.str = "Else"
+        elif end_type_low == 1:
+            out.str = "Elif"
+        elif end_type_low == 2:
+            out.str = "With"
+        else:
+            out.str = "Endif"
 
     elif out.opcode == CheatVmOpcodeType.ControlLoop:
         start_loop = ((first_dword >> 24) & 0xF) == 0
@@ -339,31 +342,30 @@ def decode_next_opcode(opcodes, index):
     elif out.opcode == CheatVmOpcodeType.LoadRegisterMemory:
         bit_width = (first_dword >> 24) & 0xF
         mem_type = MemoryAccessType((first_dword >> 20) & 0xF)
-        reg_index = (first_dword >> 16) & 0xF # Destination register
-        load_from_reg_type = (first_dword >> 12) & 0xF # This is the key field
-        offset_register_val = (first_dword >> 8) & 0xF # This is the "R" in bR# if type is 1
+        reg_index = (first_dword >> 16) & 0xF
+        load_from_reg_type = (first_dword >> 12) & 0xF
+        offset_register_val = (first_dword >> 8) & 0xF
         second_dword, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
 
         rel_address_high_8 = first_dword & 0xFF
         rel_address = (rel_address_high_8 << 32) | second_dword
 
-        # Adjust parsing for bR# syntax based on assembler behavior
-        if load_from_reg_type == 3: # MemType + R_base + immediate (original type 3)
+        if load_from_reg_type == 3:
             out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+R{offset_register_val}+0x{rel_address:010X}] W={bit_width}"
-        elif load_from_reg_type == 1 and mem_type == MemoryAccessType.MainNso: # bR# + immediate (new bR# handling)
+        elif load_from_reg_type == 1 and mem_type == MemoryAccessType.MainNso:
             out.str = f"R{reg_index} = [bR{offset_register_val}+0x{rel_address:010X}] W={bit_width}"
-        elif load_from_reg_type == 1: # R_base + immediate (original type 1, R[reg_index] + offset)
+        elif load_from_reg_type == 1:
             out.str = f"R{reg_index} = [R{reg_index}+0x{rel_address:010X}] W={bit_width}"
-        elif load_from_reg_type == 2: # R_base + immediate (original type 2, R[offset_register_val] + offset)
+        elif load_from_reg_type == 2:
             out.str = f"R{reg_index} = [R{offset_register_val}+0x{rel_address:010X}] W={bit_width}"
-        else: # MemType + immediate (original type 0)
+        else:
             out.str = f"R{reg_index} = [{mem_type_str(mem_type)}+0x{rel_address:010X}] W={bit_width}"
 
     elif out.opcode == CheatVmOpcodeType.StoreStaticToAddress:
         bit_width = (first_dword >> 24) & 0xF
         reg_index = (first_dword >> 16) & 0xF
         increment_reg = ((first_dword >> 12) & 0xF) != 0
-        add_offset_reg = ((first_dword >> 20) & 0xF) == 2 # Check for '2' for R+R offset
+        add_offset_reg = ((first_dword >> 20) & 0xF) == 2
         offset_reg_index = (first_dword >> 8) & 0xF
         value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, 8)
 
@@ -378,7 +380,6 @@ def decode_next_opcode(opcodes, index):
         bit_width = (first_dword >> 24) & 0xF
         reg_index = (first_dword >> 16) & 0xF
         math_type = RegisterArithmeticType((first_dword >> 12) & 0xF)
-        # Fix: Revert to reading a single DWORD for the static value
         value, instruction_ptr = get_next_dword(opcodes, instruction_ptr)
         out.str = f"R{reg_index} = R{reg_index} {MATH_STR.get(math_type, '?')} 0x{value:X} W={bit_width}"
 
@@ -391,7 +392,7 @@ def decode_next_opcode(opcodes, index):
         math_type = RegisterArithmeticType((first_dword >> 20) & 0xF)
         dst_reg_index = (first_dword >> 16) & 0xF
         src_reg_1_index = (first_dword >> 12) & 0xF
-        has_immediate = ((first_dword >> 8) & 0xF) == 1 # Check bit 8 being 1 for immediate
+        has_immediate = ((first_dword >> 8) & 0xF) == 1
 
         if has_immediate:
             value, instruction_ptr = get_next_vm_int(opcodes, instruction_ptr, bit_width)
@@ -565,7 +566,20 @@ def disassemble_opcodes_from_string(opcodes_str):
             if current_cheat_opcodes:
                 output_buffer.append(disassemble_cheat(current_cheat_opcodes))
                 current_cheat_opcodes = []
-            output_buffer.append(f"\n{line}")
+
+            title = line.strip()
+            if title.startswith('[--SectionStart:') and title.endswith('--]'):
+                start_index = title.find(':') + 1
+                end_index = title.rfind('--]')
+                section_title = title[start_index:end_index]
+                output_buffer.append(f"\nSectionStart {section_title}")
+            elif title.startswith('[--SectionEnd:') and title.endswith('--]'):
+                start_index = title.find(':') + 1
+                end_index = title.rfind('--]')
+                section_title = title[start_index:end_index]
+                output_buffer.append(f"\nSectionEnd {section_title}")
+            else:
+                output_buffer.append(f"\n{line}")
         else:
             parts = line.split()
             for part in parts:
@@ -617,7 +631,7 @@ def main():
     parser = argparse.ArgumentParser(description="ARM Disassembler for Cheat VM Opcodes.")
     parser.add_argument('--arch', type=str, default="ARM64", help="Target architecture (ARM64 or ARM32).")
     parser.add_argument('--show-raw-opcodes', type=lambda x: x.lower() == 'true', default=True,
-                                 help="Whether to show raw opcodes in the disassembly output (true/false).")
+                         help="Whether to show raw opcodes in the disassembly output (true/false).")
     args = parser.parse_args()
 
     TARGET_ARCH = args.arch.upper()

@@ -33,6 +33,7 @@
             statusLabel = new ToolStripStatusLabel();
             tabControlMain = new TabControl();
             tabPageMain = new TabPage();
+            btnRelocate = new Button();
             btnGenerateCodeCave = new Button();
             numericUpDownCaveLines = new NumericUpDown();
             textBoxCaveBaseAddress = new TextBox();
@@ -99,6 +100,7 @@
             // 
             // tabPageMain
             // 
+            tabPageMain.Controls.Add(btnRelocate);
             tabPageMain.Controls.Add(btnGenerateCodeCave);
             tabPageMain.Controls.Add(numericUpDownCaveLines);
             tabPageMain.Controls.Add(textBoxCaveBaseAddress);
@@ -125,6 +127,17 @@
             tabPageMain.Text = "Assemble/Disassemble";
             tabPageMain.UseVisualStyleBackColor = true;
             tabPageMain.Click += tabPageMain_Click;
+            // 
+            // btnRelocate
+            // 
+            btnRelocate.Enabled = false;
+            btnRelocate.Location = new Point(488, 725);
+            btnRelocate.Name = "btnRelocate";
+            btnRelocate.Size = new Size(107, 23);
+            btnRelocate.TabIndex = 37;
+            btnRelocate.Text = "Relocate Caves";
+            btnRelocate.UseVisualStyleBackColor = true;
+            btnRelocate.Click += btnRelocate_Click;
             // 
             // btnGenerateCodeCave
             // 
@@ -482,5 +495,6 @@
         private Label lblVMOpCodes;
         private Button btnSwitchInjection;
         private Label lblTestWarning;
+        private Button btnRelocate;
     }
 }

@@ -165,7 +165,22 @@ def assemble_from_string(input_str, arch_type, base_address_override=None):
         if not line_stripped or line_stripped.startswith(';'):
             continue
         
-        if line_stripped.startswith('[') and line_stripped.endswith(']') and not '=' in line_stripped:
+        # New logic to handle section separators
+        if line_stripped.lower().startswith('sectionstart'):
+            section_name = line_stripped[len('sectionstart'):].strip()
+            output_lines.append("")
+            output_lines.append(f"[--SectionStart:{section_name}--]")
+            continue
+        
+        if line_stripped.lower().startswith('sectionend'):
+            section_name = line_stripped[len('sectionend'):].strip()
+            output_lines.append("")
+            output_lines.append(f"[--SectionEnd:{section_name}--]")
+            continue
+
+        if ( (line_stripped.startswith('[') and line_stripped.endswith(']')) or \
+     (line_stripped.startswith('{') and line_stripped.endswith('}')) ) and \
+   (not '=' in line_stripped):
             if current_cheat_name:
                 output_lines.append("")
             current_cheat_name = line_stripped
@@ -190,21 +205,43 @@ def assemble_from_string(input_str, arch_type, base_address_override=None):
             addr_str = match.group('addr')
             value_to_parse = match.group('value').strip()
 
-            mem_type_to_use = mem_type_from_str(mem_type_str_raw) if mem_type_str_raw else MemoryAccessType.MainNso
-            register_index_to_use = int(reg_str) if reg_str else 0
-            absolute_address_to_use = parse_int(addr_str)
+            mem_type_to_use = mem_type_from_str(mem_type_str_raw) if mem_type_str_raw else current_mem_type_header
+            register_index_to_use = int(reg_str) if reg_str else current_reg_header
+            absolute_address_to_use = parse_int(addr_str) if addr_str else current_addr_header
 
             current_mem_type_header = mem_type_to_use
             current_reg_header = register_index_to_use
             current_addr_header = absolute_address_to_use
-        else:
-            is_valid_instruction_format = (
-                re.match(r'(if|loop|R\d+\s*=|\A\[R\d+\]\s*=|\A\[\w+\+R\d+\]\s*=|\Asaverestore|readwritestatic)', value_to_parse, re.IGNORECASE) or
-                re.match(r'\.(float|word|short|byte|double):', value_to_parse, re.IGNORECASE) or
-                value_to_parse.lower() == 'endif' or value_to_parse.lower() == 'else' or value_to_parse.lower() == 'nop'
-            )
-            if not is_valid_instruction_format:
-                print(f"Warning (Line {line_num}): Line format not recognized as explicit cheat format or valid implicit instruction. Skipping: '{line_stripped}'", file=sys.stderr)
+            if re.match(r'0x[0-9a-fA-F]+$', value_to_parse, re.IGNORECASE):
+                hex_value_str = value_to_parse[2:]
+                value = int(hex_value_str, 16)
+                
+                # Determine bit width based on the length of the hex string
+                value_len = len(hex_value_str)
+                if value_len <= 2:
+                    bit_width = 1
+                elif value_len <= 4:
+                    bit_width = 2
+                elif value_len <= 8:
+                    bit_width = 4
+                else:
+                    bit_width = 8
+                    
+                opcode = CheatVmOpcodeType.StoreStatic
+                first_dword = (opcode.value << 28) | (bit_width << 24) | (mem_type_to_use.value << 20) | (register_index_to_use << 16) | ((absolute_address_to_use >> 32) & 0xFF)
+                second_dword = absolute_address_to_use & 0xFFFFFFFF
+                
+                if bit_width == 8:
+                    third_dword = (value >> 32) & 0xFFFFFFFF
+                    fourth_dword = value & 0xFFFFFFFF
+                    assembled_bytes = [first_dword, second_dword, third_dword, fourth_dword]
+                else:
+                    third_dword = value & 0xFFFFFFFF
+                    assembled_bytes = [first_dword, second_dword, third_dword]
+
+                output_lines.append(" ".join([f"{b:08X}" for b in assembled_bytes]))
+                total_assembled_bytes += len(assembled_bytes) * 4
+                processed_lines_count += 1
                 continue
 
         opcode = None
@@ -220,7 +257,12 @@ def assemble_from_string(input_str, arch_type, base_address_override=None):
             elif value_to_parse.lower() == 'else':
                 opcode = CheatVmOpcodeType.EndConditionalBlock
                 first_dword = (opcode.value << 28) | (1 << 24)
-            
+            elif value_to_parse.lower() == 'elif':
+                opcode = CheatVmOpcodeType.EndConditionalBlock
+                first_dword = (opcode.value << 28) | 0x1
+            elif value_to_parse.lower() == 'with':
+                opcode = CheatVmOpcodeType.EndConditionalBlock
+                first_dword = (opcode.value << 28) | 0x2
             elif value_to_parse.lower().startswith('if '):
                 cond_str = value_to_parse[3:].strip()
 
